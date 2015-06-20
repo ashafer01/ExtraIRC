@@ -1,3 +1,2 @@
-__all__ = [
-	'irc'
-]
+import log
+from TerminalColor import TerminalColor
