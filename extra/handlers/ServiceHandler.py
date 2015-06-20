@@ -1,12 +1,10 @@
-import ..log
-
 class ServiceHandler:
 	def __init__(self, endpoint, log):
 		self.endpoint = endpoint
 		self.log = log
 
 	def ERROR(self, line):
-		log.fatal(log.color.red("Received ERROR line: {0}".format(line.text)))
+		self.log.fatal("Received ERROR line: {0}".format(line.text))
 		sys.exit(1)
 
 	def PING(self, line):

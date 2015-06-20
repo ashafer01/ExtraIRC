@@ -51,7 +51,9 @@ def start_stdio(HANDLER):
 	import extra
 	import sys
 	ircEndpoint = extra.ircEndpoint(HANDLER)
-	ircEndpoint.write = sys.stdout.write
+	def write(line):
+		print line
+	ircEndpoint.write = write
 	while True:
 		ircEndpoint.handleLine(sys.stdin.readline())
 

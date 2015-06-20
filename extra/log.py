@@ -42,20 +42,20 @@ def do_message(level, message):
 			print '[{0}] {1}: {2}'.format(timestamp(), level_to_string(level), line)
 
 def fatal(message):
-	do_message(FATAL, message)
+	do_message(FATAL, color.light_red(message))
 def error(message):
-	do_message(ERROR, message)
+	do_message(ERROR, color.red(message))
 def warning(message):
-	do_message(WARNING, message)
+	do_message(WARNING, color.yellow(message))
 def notice(message):
 	do_message(NOTICE, message)
 def info(message):
 	do_message(INFO, message)
 def debug(message):
-	do_message(DEBUG, message)
+	do_message(DEBUG, color.light_gray(message))
 def debug1(message):
-	do_message(DEBUG1, message)
+	do_message(DEBUG1, color.dark_gray(message))
 def debug2(message):
-	do_message(DEBUG2, message)
+	do_message(DEBUG2, color.dark_gray(message))
 def debug3(message):
-	do_message(DEBUG3, message)
+	do_message(DEBUG3, color.dark_gray(message))
