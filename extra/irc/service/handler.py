@@ -1,7 +1,8 @@
 import sys
 from extra import log
-from extra.irc import server.Output
+from extra.irc import server
 from extra.utils import time
+from extra.config import Config
 
 class handler:
 	def __init__(self, endpoint):

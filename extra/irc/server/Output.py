@@ -1,4 +1,4 @@
-from extra.irc import client.Output
+from extra.irc import client
 from extra.config import Config
 from extra.utils import time
 
@@ -6,10 +6,10 @@ class Output:
 	def __init__(self, out_function):
 		self.send = out_function
 
-	def as(self, nick):
-		def asNick(text):
+	def asNick(self, nick):
+		def sendAsNick(text):
 			self.send(":{0} {1}".format(nick, text))
-		return client.Output(asNick)
+		return client.Output(sendAsNick)
 
 	def asServer(self, text):
 		self.send(":{0} {1}".format(Config.hostname, text))

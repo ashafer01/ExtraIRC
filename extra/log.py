@@ -1,8 +1,6 @@
 import TerminalColor as color
 import datetime
 
-LEVEL = DEBUG
-
 FATAL = 0
 ERROR = 1
 WARNING = 2
@@ -12,6 +10,8 @@ DEBUG = 5
 DEBUG1 = 6
 DEBUG2 = 7
 DEBUG3 = 8
+
+LEVEL = DEBUG
 
 def level_to_string(level):
 	if level == FATAL:

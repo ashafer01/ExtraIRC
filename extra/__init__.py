@@ -1,14 +1,15 @@
 import log
-from TerminalColor import TerminalColor
+import TerminalColor
 from state import state
 from ircEndpoint import ircEndpoint
 
 def start_twisted(HANDLER):
+	from twisted.internet.protocol import ClientFactory
 	from twisted.internet.endpoints import TCP4ClientEndpoint
 	from twisted.protocols.basic import LineReceiver
 
 	class Uplink(LineReceiver):
-		def __init__(self, **kwargs)
+		def __init__(self, **kwargs):
 			self.ircEndpoint = ircEndpoint(self.sendLine, kwargs['handler'], state())
 
 		def lineReceived(self, line):

@@ -6,7 +6,7 @@ class Config:
 	token = '0ES'
 	info = 'ExtraServ ~new~ IRC Services for Hybrid'
 
-	@staticmethod
-	def password(pw_name):
-		with open('password/{0}.pw'.format(pw_name), 'r') as f:
+	@classmethod
+	def password(cls, pw_name):
+		with open('{1}/passwords/{0}.pw'.format(pw_name, cls.base_dir), 'r') as f:
 			return f.readline().strip()

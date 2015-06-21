@@ -9,10 +9,10 @@ class DictObject(dict):
 		for key in initial:
 			self[key] = initial[key]
 
-	def __getattr__(self, name)
+	def __getattr__(self, name):
 		return self[name]
 
-	def __setattr__(self, name, value)
+	def __setattr__(self, name, value):
 		self[name] = value
 
 import time as time_module
