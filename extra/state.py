@@ -9,6 +9,7 @@ class state:
 
 		self.channels = channels(self.dbc)
 		self.nicks = nicks(self.dbc)
+		self.servers = servers(self.dbc)
 
 	def changeNick(self, oldnick, newnick):
 		self.nicks.change(oldnick, newnick)
@@ -18,11 +19,48 @@ class state:
 		self.nicks.remove(nick)
 		self.channels.removeNick(nick)
 
+	def isNick(self, nick):
+		return self.nicks.get(nick) is not None
+
+	def isServer(self, server):
+		return self.servers.get(server) is not None
+
+class servers:
+	def __init__(self, dbc):
+		self.dbc = dbc
+		db = self.dbc.cursor()
+		db.execute('CREATE TABLE IF NOT EXISTS servers (name varchar(100), token char(3), desc varchar(200))')
+		self.dbc.commit()
+
+	def get(self, server):
+		c = self.dbc.cursor()
+		c.execute('SELECT * FROM servers WHERE name=?', (server,))
+		return c.fetchone()
+
+	def add(self, **kwargs):
+		if self.get(kwargs['name']) is None:
+			c = self.dbc.cursor()
+			c.execute('INSERT INTO servers (name, token, desc) VALUES (:name, :token, :desc)', kwargs)
+			self.dbc.commit()
+			log.info('Added server {name}'.format(**kwargs))
+		else:
+			raise Exception('Server already exists')
+
+	def remove(self, server):
+		c = self.dbc.cursor()
+		c.execute('DELETE FROM servers WHERE name=?', (server,))
+		n = c.rowcount
+		self.dbc.commit()
+		if n > 0:
+			log.debug('Removed server {0}'.format(server))
+		else:
+			log.notice('server {0} does not exist on remove'.format(server))
+
 class nicks:
 	def __init__(self, dbc):
 		self.dbc = dbc
 		db = self.dbc.cursor()
-		db.execute('CREATE TABLE nicks (nick varchar(24), user varchar(72), host varchar(100), modes varchar(20), server varchar(100), realname varchar(100))')
+		db.execute('CREATE TABLE IF NOT EXISTS nicks (nick varchar(24), user varchar(72), host varchar(100), modes varchar(20), server varchar(100), realname varchar(100))')
 		self.dbc.commit()
 
 	def get(self, nick):
@@ -40,6 +78,7 @@ class nicks:
 			c = self.dbc.cursor()
 			c.execute('INSERT INTO nicks (nick,user,host,modes,server,realname) VALUES (:nick,:user,:host,:modes,:server,:realname)', kwargs)
 			self.dbc.commit()
+			log.info('Added nick {nick}'.format(**kwargs))
 		else:
 			raise Exception('nick or user already exists')
 
@@ -67,9 +106,9 @@ class channels:
 	def __init__(self, dbc):
 		self.dbc = dbc
 		db = self.dbc.cursor()
-		db.execute('CREATE TABLE channels (channel varchar(60), modes varchar(40), mode_k varchar(72), mode_l varchar(6))')
-		db.execute('CREATE TABLE channel_members (channel varchar(60), nick varchar(24))')
-		db.execute('CREATE TABLE channel_modelists (channel varchar(60), mode char(1), value varchar(40))')
+		db.execute('CREATE TABLE IF NOT EXISTS channels (channel varchar(60), modes varchar(40), mode_k varchar(72), mode_l varchar(6))')
+		db.execute('CREATE TABLE IF NOT EXISTS channel_members (channel varchar(60), nick varchar(24))')
+		db.execute('CREATE TABLE IF NOT EXISTS channel_modelists (channel varchar(60), mode char(1), value varchar(40))')
 		self.dbc.commit()
 
 	def get(self, channel):

@@ -14,12 +14,12 @@ class Line:
 		tokens = collections.deque(line.strip().split(' '))
 		ret = cls()
 		if tokens[0][0:1] == ':':
-			ret.prefix = tokens.popleft()
+			ret.prefix = tokens.popleft()[1:]
 			self.handle = HandleInfo.parse(ret.prefix)
 		ret.cmd = tokens.popleft()
 		text_words = []
 		ontext = False
-		for tokens as token:
+		for token in tokens:
 			if not ontext:
 				if token.strip() == '':
 					continue
