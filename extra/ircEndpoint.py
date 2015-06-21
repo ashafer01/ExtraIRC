@@ -2,9 +2,10 @@ import log
 import irc
 
 class ircEndpoint:
-	def __init__(self, handler):
-		self.write = None
-		self.handler = handler(self, log)
+	def __init__(self, writefunc, handler, state):
+		self.write = writefunc
+		self.handler = handler(self)
+		self.state = state
 
 	def handleLine(self, raw_line):
 		raw_line = raw_line.strip()
@@ -20,40 +21,4 @@ class ircEndpoint:
 	def send(self, line):
 		log.info(log.color.green("=> {0}".format(line)))
 		self.write(line)
-
-def start_twisted(HANDLER):
-	from twisted.internet.protocol import ClientFactory
-	from twisted.internet.endpoints import TCP4ClientEndpoint
-	from twisted.protocols.basic import LineReceiver
-
-	class Uplink(LineReceiver):
-		def __init__(self, **kwargs)
-			self.ircEndpoint = ircEndpoint(kwargs['handler'])
-			self.ircEndpoint.write = self.sendLine
-
-		def lineReceived(self, line):
-			self.ircEndpoint.handleLine(line)
-
-	class UplinkFactory(ClientFactory):
-		protocol = Uplink
-
-		def __init__(self, **kwargs):
-			self.init_kwargs = kwargs
-
-		def buildProtocol(self, addr):
-			return Uplink(**self.init_kwargs)
-
-	from twisted.internet import reactor
-	reactor.connectTCP('localhost', 9999, UplinkFactory(handler=HANDLER))
-	reactor.run()
-
-def start_stdio(HANDLER):
-	import extra
-	import sys
-	ircEndpoint = extra.ircEndpoint(HANDLER)
-	def write(line):
-		print line
-	ircEndpoint.write = write
-	while True:
-		ircEndpoint.handleLine(sys.stdin.readline())
 
