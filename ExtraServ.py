@@ -1,6 +1,7 @@
 #!/usr/bin/python
 import extra
 import extra.service
+import extra.config
 
 if __name__ == '__main__':
 	import argparse
@@ -11,6 +12,7 @@ if __name__ == '__main__':
 	opts = parser.parse_args()
 
 	if opts.run is None:
-		opts.run = extra.ircEndpoint.start_twisted
+		opts.run = extra.start_twisted
 
+	extra.config.loadConfig()
 	opts.run(extra.service.handler)

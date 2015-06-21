@@ -14,3 +14,7 @@ class DictObject(dict):
 
 	def __setattr__(self, name, value)
 		self[name] = value
+
+import time as time_module
+def time():
+	return int(time_module.time())

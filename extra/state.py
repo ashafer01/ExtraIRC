@@ -28,27 +28,23 @@ class state:
 class servers:
 	def __init__(self, dbc):
 		self.dbc = dbc
-		db = self.dbc.cursor()
-		db.execute('CREATE TABLE IF NOT EXISTS servers (name varchar(100), token char(3), desc varchar(200))')
+		self.dbc.execute('CREATE TABLE IF NOT EXISTS servers (name varchar(100), token char(3), desc varchar(200))')
 		self.dbc.commit()
 
 	def get(self, server):
-		c = self.dbc.cursor()
-		c.execute('SELECT * FROM servers WHERE name=?', (server,))
+		c = self.dbc.execute('SELECT * FROM servers WHERE name=?', (server,))
 		return c.fetchone()
 
 	def add(self, **kwargs):
 		if self.get(kwargs['name']) is None:
-			c = self.dbc.cursor()
-			c.execute('INSERT INTO servers (name, token, desc) VALUES (:name, :token, :desc)', kwargs)
+			self.dbc.execute('INSERT INTO servers (name, token, desc) VALUES (:name, :token, :desc)', kwargs)
 			self.dbc.commit()
 			log.info('Added server {name}'.format(**kwargs))
 		else:
 			raise Exception('Server already exists')
 
 	def remove(self, server):
-		c = self.dbc.cursor()
-		c.execute('DELETE FROM servers WHERE name=?', (server,))
+		c = self.dbc.execute('DELETE FROM servers WHERE name=?', (server,))
 		n = c.rowcount
 		self.dbc.commit()
 		if n > 0:
@@ -59,32 +55,27 @@ class servers:
 class nicks:
 	def __init__(self, dbc):
 		self.dbc = dbc
-		db = self.dbc.cursor()
-		db.execute('CREATE TABLE IF NOT EXISTS nicks (nick varchar(24), user varchar(72), host varchar(100), modes varchar(20), server varchar(100), realname varchar(100))')
+		self.dbc.execute('CREATE TABLE IF NOT EXISTS nicks (nick varchar(24), user varchar(72), host varchar(100), modes varchar(20), server varchar(100), realname varchar(100))')
 		self.dbc.commit()
 
 	def get(self, nick):
-		c = self.dbc.cursor()
-		c.execute('SELECT * FROM nicks WHERE nick=?', (nick,))
+		c = self.dbc.execute('SELECT * FROM nicks WHERE nick=?', (nick,))
 		return c.fetchone()
 
 	def getByUser(self, user):
-		c = self.dbc.cursor()
-		c.execute('SELECT * FROM nicks WHERE user=?', (user,))
+		c = self.dbc.execute('SELECT * FROM nicks WHERE user=?', (user,))
 		return c.fetchone()
 
 	def add(self, **kwargs):
 		if self.get(kwargs['nick']) is None and self.getByuser(kwargs['user']):
-			c = self.dbc.cursor()
-			c.execute('INSERT INTO nicks (nick,user,host,modes,server,realname) VALUES (:nick,:user,:host,:modes,:server,:realname)', kwargs)
+			self.dbc.execute('INSERT INTO nicks (nick,user,host,modes,server,realname) VALUES (:nick,:user,:host,:modes,:server,:realname)', kwargs)
 			self.dbc.commit()
 			log.info('Added nick {nick}'.format(**kwargs))
 		else:
 			raise Exception('nick or user already exists')
 
 	def change(self, oldnick, newnick):
-		c = self.dbc.cursor()
-		c.execute('UPDATE nicks SET nick=? WHERE nick=?', (newnick, oldnick))
+		c = self.dbc.execute('UPDATE nicks SET nick=? WHERE nick=?', (newnick, oldnick))
 		n = c.rowcount
 		self.dbc.commit()
 		if n > 0:
@@ -93,8 +84,7 @@ class nicks:
 			log.notice('Nick {0} does not exist on change'.format(oldnick))
 
 	def remove(self, nick):
-		c = self.dbc.cursor()
-		c.execute('DELETE FROM nicks WHERE nick=?', (nick,))
+		c = self.dbc.execute('DELETE FROM nicks WHERE nick=?', (nick,))
 		n = c.rowcount
 		self.dbc.commit()
 		if n > 0:
@@ -105,28 +95,24 @@ class nicks:
 class channels:
 	def __init__(self, dbc):
 		self.dbc = dbc
-		db = self.dbc.cursor()
-		db.execute('CREATE TABLE IF NOT EXISTS channels (channel varchar(60), modes varchar(40), mode_k varchar(72), mode_l varchar(6))')
-		db.execute('CREATE TABLE IF NOT EXISTS channel_members (channel varchar(60), nick varchar(24))')
-		db.execute('CREATE TABLE IF NOT EXISTS channel_modelists (channel varchar(60), mode char(1), value varchar(40))')
+		self.dbc.execute('CREATE TABLE IF NOT EXISTS channels (channel varchar(60), modes varchar(40), mode_k varchar(72), mode_l varchar(6))')
+		self.dbc.execute('CREATE TABLE IF NOT EXISTS channel_members (channel varchar(60), nick varchar(24))')
+		self.dbc.execute('CREATE TABLE IF NOT EXISTS channel_modelists (channel varchar(60), mode char(1), value varchar(40))')
 		self.dbc.commit()
 
 	def get(self, channel):
-		c = self.dbc.cursor()
-		c.execute('SELECT * FROM channels WHERE channel=?', (channel,))
+		c = self.dbc.execute('SELECT * FROM channels WHERE channel=?', (channel,))
 		return c.fetchone()
 
 	def getMembers(self, channel):
-		c = self.dbc.cursor()
-		c.execute('SELECT nick FROM channel_members WHERE channel=?', (channel,))
+		c = self.dbc.execute('SELECT nick FROM channel_members WHERE channel=?', (channel,))
 		ret = []
 		for row in c:
 			ret.append(c.nick)
 		return ret
 
 	def getModelist(self, channel, modechar):
-		c = self.dbc.cursor()
-		c.execute('SELECT value FROM channel_modelists WHERE channel=? AND mode=?', (channel, modechar))
+		c = self.dbc.execute('SELECT value FROM channel_modelists WHERE channel=? AND mode=?', (channel, modechar))
 		ret = []
 		for row in c:
 			ret.append(c.value)
@@ -134,8 +120,7 @@ class channels:
 
 	def add(self, **kwargs):
 		if self.getChannel(kwargs['channel']) is None:
-			c = self.dbc.cursor()
-			c.execute('INSERT INTO channels (channel, modes, mode_k, mode_l) VALUES (:channel, :modes, :mode_k, :mode_l)', kwargs)
+			self.dbc.execute('INSERT INTO channels (channel, modes, mode_k, mode_l) VALUES (:channel, :modes, :mode_k, :mode_l)', kwargs)
 			self.dbc.commit()
 			log.debug("Added new channel {0}".format(kwargs['channel']))
 			log.debug1("New channel parameters: {0}".format(kwargs))
@@ -143,20 +128,18 @@ class channels:
 			log.notice("Channel {0} already exists when adding new channel".format(kwargs['channel']))
 
 	def addMember(self, channel, member):
-		c = self.dbc.cursor()
 		if member not in self.getChannelMembers(channel):
-			c.execute('INSERT INTO channel_members (channel, nick, chanmodes) VALUES (?, ?, '')', (channel, member))
+			self.dbc.execute('INSERT INTO channel_members (channel, nick, chanmodes) VALUES (?, ?, '')', (channel, member))
 		else:
 			log.debug1("{0} is already a member of channel {1}".format(member, channel))
 		self.dbc.commit()
 		log.debug("Added {0} to {1}".format(member, channel))
 
 	def removeMember(self, channel, member):
-		c = self.dbc.cursor()
 		n = 0
-		c.execute("DELETE FROM channel_members WHERE channel=? AND nick=?", (channel, member))
+		c = self.dbc.execute("DELETE FROM channel_members WHERE channel=? AND nick=?", (channel, member))
 		n += c.rowcount
-		c.execute("DELETE FROM channel_modelists WHERE channel=? AND mode IN('o','h','v') AND value=?", (channel, member))
+		c = self.dbc.execute("DELETE FROM channel_modelists WHERE channel=? AND mode IN('o','h','v') AND value=?", (channel, member))
 		n += c.rowcount
 		self.dbc.commit()
 		if n > 0:
@@ -165,11 +148,10 @@ class channels:
 			log.debug1("Member {0} not in {1} on removeMember".format(member, channel))
 
 	def changeNick(self, oldnick, newnick):
-		c = self.dbc.cursor()
 		n = 0
-		c.execute("UPDATE channel_members SET nick=? WHERE nick=?", (newnick, oldnick))
+		c = self.dbc.execute("UPDATE channel_members SET nick=? WHERE nick=?", (newnick, oldnick))
 		n += c.rowcount
-		c.execute("UPDATE channel_modelists SET value=? WHERE mode IN('o','h','v') AND value=?", (newnick, oldnick))
+		c = self.dbc.execute("UPDATE channel_modelists SET value=? WHERE mode IN('o','h','v') AND value=?", (newnick, oldnick))
 		n += c.rowcount
 		self.dbc.commit()
 		if n > 0:
@@ -178,11 +160,10 @@ class channels:
 			log.notice("No changes made on changeNick for {0}".format(oldnick))
 
 	def removeNick(self, nick):
-		c = self.dbc.cursor()
 		n = 0
-		c.execute("DELETE FROM channel_members WHERE nick=?", (channel, member))
+		c = self.dbc.execute("DELETE FROM channel_members WHERE nick=?", (channel, member))
 		n += c.rowcount
-		c.execute("DELETE FROM channel_modelists WHERE mode IN('o','h','v') AND value=?", (channel, member))
+		c = self.dbc.execute("DELETE FROM channel_modelists WHERE mode IN('o','h','v') AND value=?", (channel, member))
 		n += c.rowcount
 		self.dbc.commit()
 		if n > 0:

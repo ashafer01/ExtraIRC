@@ -1,3 +1,4 @@
+from extra import log
 import collections
 import re
 
@@ -7,12 +8,14 @@ class Line:
 		self.cmd = None
 		self.args = []
 		self.text = ''
+		self.raw = None
 		self.handle = HandleInfo()
 
 	@classmethod
 	def parse(cls, line):
-		tokens = collections.deque(line.strip().split(' '))
 		ret = cls()
+		ret.raw = line
+		tokens = collections.deque(line.strip().split(' '))
 		if tokens[0][0:1] == ':':
 			ret.prefix = tokens.popleft()[1:]
 			self.handle = HandleInfo.parse(ret.prefix)
@@ -34,14 +37,17 @@ class Line:
 		return ret
 
 	def __str__(self):
-		ret = []
-		if self.prefix is not None:
-			ret.append(':' + self.prefix)
-		ret.append(self.cmd)
-		ret += self.args
-		if self.text is not None:
-			ret.append(':' + self.text)
-		return ' '.join(ret)
+		if self.raw is None:
+			ret = []
+			if self.prefix is not None:
+				ret.append(':' + self.prefix)
+			ret.append(self.cmd)
+			ret += self.args
+			if self.text is not None:
+				ret.append(':' + self.text)
+			return ' '.join(ret)
+		else:
+			return self.raw
 
 class HandleInfo:
 	def __init__(self):
