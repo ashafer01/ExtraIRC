@@ -25,6 +25,9 @@ class state:
 	def isServer(self, server):
 		return self.servers.get(server) is not None
 
+	def isChannel(self, channel):
+		return self.channels.get(channel) is not None
+
 class servers:
 	def __init__(self, dbc):
 		self.dbc = dbc
@@ -92,6 +95,17 @@ class nicks:
 		else:
 			log.notice('Nick {0} does not exist on remove'.format(nick))
 
+	def setModes(self, nick, modes):
+		if isinstance(modes, set):
+			modes = ''.join(modes)
+		c = self.dbc.execute('UPDATE nicks SET modes=? WHERE nick=?', (modes, nick))
+		n = c.rowcount
+		self.dbc.commit()
+		if n > 0:
+			log.debug('Updated modes for {0}'.format(nick))
+		else:
+			log.notice('Nick {0} does not exist on setModes'.format(nick))
+
 class channels:
 	def __init__(self, dbc):
 		self.dbc = dbc
@@ -118,6 +132,23 @@ class channels:
 			ret.append(c.value)
 		return ret
 
+	def addToModelist(self, channel, mode, value):
+		current_list = self.getModelist(channel, mode)
+		if value not in current_list:
+			self.dbc.execute('INSERT INTO channel_modelists (channel, mode, value) VALUES (?, ?, ?)', (channel, mode, value))
+			self.dbc.commit()
+			log.debug('Added {0} to modelist {1} for {2}'.format(value, mode, channel))
+		else:
+			log.debug1('{0} already on modelist {1} for {2}'.format(value, mode, channel))
+
+	def removeFromModelist(self, channel, mode, value):
+		c = self.dbc.execute("DELETE FROM channel_modelists WHERE channel=? AND mode=? AND value=?", (channel, mode, member))
+		n = c.rowcount
+		if n > 0:
+			log.debug('Removed {0} from modelist {1} for {2}'.format(value, mode, channel))
+		else:
+			log.debug1('No changes made on removeFromModelist')
+
 	def add(self, **kwargs):
 		if self.getChannel(kwargs['channel']) is None:
 			self.dbc.execute('INSERT INTO channels (channel, modes, mode_k, mode_l) VALUES (:channel, :modes, :mode_k, :mode_l)', kwargs)
@@ -127,9 +158,9 @@ class channels:
 		else:
 			log.notice("Channel {0} already exists when adding new channel".format(kwargs['channel']))
 
-	def addMember(self, channel, member):
+	def addMember(self, **kwargs):
 		if member not in self.getChannelMembers(channel):
-			self.dbc.execute('INSERT INTO channel_members (channel, nick, chanmodes) VALUES (?, ?, '')', (channel, member))
+			self.dbc.execute('INSERT INTO channel_members (channel, nick, chanmodes) VALUES (:channel, :nick, :chanmodes)', (channel, member))
 		else:
 			log.debug1("{0} is already a member of channel {1}".format(member, channel))
 		self.dbc.commit()
@@ -158,6 +189,23 @@ class channels:
 			log.debug("Changed nick {0} => {1} in channel state".format(oldnick, newnick))
 		else:
 			log.notice("No changes made on changeNick for {0}".format(oldnick))
+
+	def setModes(self, **params):
+		query = 'UPDATE channels SET modes={modes}'
+		if 'mode_k' in params and params['mode_k'] is not None:
+			query += ', mode_k={mode_k}'
+		if 'mode_l' in params and params['mode_l'] is not None:
+			query += ', mode_l={mode_l}'
+		query += ' WHERE channel={channel}'
+		if isinstance(params['modes'], set):
+			params['modes'] = ''.join(params['modes'])
+		c = self.dbc.execute(query, params)
+		n = c.rowcount
+		self.dbc.commit()
+		if n > 0:
+			log.debug("Updated modes for channel {0} -> {1}".format(channel, params))
+		else:
+			log.notice("No changes made on setModes for {0}".format(channel))
 
 	def removeNick(self, nick):
 		n = 0

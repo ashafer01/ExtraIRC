@@ -18,7 +18,7 @@ class Line:
 		tokens = collections.deque(line.strip().split(' '))
 		if tokens[0][0:1] == ':':
 			ret.prefix = tokens.popleft()[1:]
-			self.handle = HandleInfo.parse(ret.prefix)
+			ret.handle = HandleInfo.parse(ret.prefix)
 		ret.cmd = tokens.popleft()
 		text_words = []
 		ontext = False

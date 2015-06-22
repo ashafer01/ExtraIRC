@@ -1,4 +1,5 @@
 import sys
+import collections
 from extra import log
 from extra.irc import server
 from extra.utils import time
@@ -60,14 +61,107 @@ class handler:
 	def SJOIN(self, line):
 		log.debug('Got SJOIN')
 
+		chan = line.args[1].lower()
+
+		cmodes = line.args[2][1:]
+		newchan = {'channel':chan, 'modes':cmodes}
+
+		# handle mode args
+		mode_args = collections.deque(line.args[3:] + ['',''])
+		for modechar in cmodes:
+			if modechar == 'k':
+				newchan['mode_k'] = mode_args.popleft()
+			elif modechar == 'l':
+				newchan['mode_l'] = mode_args.popleft()
+			elif modechar in 'ohv':
+				raise Exception('List mode in SJOIN')
+
+		self.endpoint.state.channels.add(**newchan)
+
+		# process names list
+		names = line.text.split()
+		for name in names:
+			newmember = {'channel':chan,'chanmodes':''}
+			name = name.lower()
+			chanmodes = ''
+			while name[0] in Config.modeSymbolMap:
+				chanmodes += Config.modeSymbolMap[name[0]]
+				name = name[1:]
+			newmember['nick'] = name
+			newmember['chanmodes'] = chanmodes
+
+			if self.endpoint.state.isNick(name):
+				self.endpoint.state.channels.addMember(**newmember)
+			else:
+				log.warning('Got unknown nick in SJOIN')
+		log.debug2('Finished SJOIN handling')
+
 	def JOIN(self, line):
-		log.debug('Got JOIN')
+		log.warning('Got standard JOIN message > {0}'.format(line))
 
 	def PART(self, line):
 		log.debug('Got PART')
+		self.endpoint.state.channels.removeMember(line.args[0].lower(), line.handle.nick)
+		log.debug2('Finished PART handling')
 
 	def MODE(self, line):
 		log.debug('Got MODE')
+		target = line.args[0].lower()
+		modeargs = collections.deque(line.args[2:])
+		if self.endpoint.state.isChannel(target):
+			log.debug('Got chanmode change')
+			chan = target
+			chanobj = self.endpoint.state.channels.get(chan)
+			modes = line.args[1]
+			op = None
+			changeParams = {'channel':chan,'modes':set(chanobj.modes)}
+			for c in modes:
+				if c in '+-':
+					op = c
+					continue
+				if op is None:
+					raise Exception('Malformed MODE')
+				change = '{0}{1}'.format(op, c)
+				log.debug1('Found chanmode {0} {1}'.format(chan, change))
+				if c in 'ohvbeI': # list modes
+					log.debug2('Taking argument for {0}'.format(change))
+					value = modeargs.popleft()
+					if op == '+':
+						self.endpoint.state.channels.addToModelist(chan, c, value)
+					else:
+						self.endpoint.state.channels.removeFromModelist(chan, c, value)
+				elif c in 'kl': # single-argument modes
+					log.debug2('Taking argument for {0}'.format(change))
+					value = modeargs.popleft()
+					changeParams['mode_{0}'.format(c)] = value
+				else: # mode flag
+					if op == '+':
+						changeParams['modes'].add(c)
+					else:
+						changeParams['modes'].discard(c)
+			self.endpoint.state.channels.setModes(**changeParams)
+		elif self.endpoint.state.isNick(target):
+			log.debug('Got usermode change')
+			nick = target
+			modes = line.text
+			nickobj = self.endpoint.state.nicks.get(nick)
+			newmodes = set(nickobj.modes)
+			op = None
+			for c in modes:
+				if c in '+-':
+					op = c
+					continue
+				if op is None:
+					raise Exception('Malformed MODE')
+				log.debug1('Found usermode {0} {1}{2}'.format(nick, op, c))
+				if op == '+':
+					newmodes.add(c)
+				else:
+					newmodes.discard(c)
+			self.endpoint.state.nicks.setModes(nick, newmodes)
+		else:
+			log.error('Unknown MODE target')
+		log.debug2('Finished MODE handling')
 
 	def KICK(self, line):
 		log.debug('Got KICK')
