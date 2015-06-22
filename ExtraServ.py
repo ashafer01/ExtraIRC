@@ -1,6 +1,6 @@
 #!/usr/bin/python
 import extra
-import extra.irc.server
+import extra.irc.service
 import extra.config
 
 if __name__ == '__main__':
@@ -19,4 +19,4 @@ if __name__ == '__main__':
 	extra.config.Config.base_dir = os.path.dirname(os.path.realpath(__file__))
 
 	extra.log.info('Starting ExtraServ')
-	opts.run(extra.irc.server)
+	opts.run(extra.irc.service)

@@ -4,7 +4,7 @@ import collections
 from extra import log
 from extra.utils import time
 from extra.config import Config
-from Output import Output
+from output import Output
 
 class handler:
 	def __init__(self, endpoint):

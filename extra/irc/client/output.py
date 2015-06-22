@@ -1,11 +1,11 @@
-simpleCmdList = [
+simpleCmds = [
 	'PRIVMSG',
 	'NOTICE',
 	'JOIN',
 	'PART',
 ]
 
-textonlyCmdList = [
+textonlyCmds = [
 	'QUIT'
 ]
 
@@ -20,11 +20,11 @@ class Output:
 		self.out_function("{0} :{1}".format(cmd, text))
 
 	def __getattr__(self, name):
-		if name in simpleNickCmds:
+		if name in simpleCmds:
 			def cmdfunc(arg, text):
 				self.simpleCmd(name, arg, text)
 			return cmdfunc
-		elif name in textonlyCmdList:
+		elif name in textonlyCmds:
 			def cmdfunc(text):
 				self.textonlyCmd(name, text)
 			return cmdfunc

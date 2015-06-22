@@ -1,1 +1,1 @@
-from Output import Output
+from output import Output

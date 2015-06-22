@@ -11,7 +11,7 @@ DEBUG1 = 6
 DEBUG2 = 7
 DEBUG3 = 8
 
-LEVEL = DEBUG
+LEVEL = DEBUG2
 
 def level_to_string(level):
 	if level == FATAL:

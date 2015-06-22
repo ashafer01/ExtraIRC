@@ -8,6 +8,8 @@ class Config:
 	token = '0ES'
 	info = 'ExtraServ ~new~ IRC Services for Hybrid'
 
+	serviceHandle = 'ExtraServ'
+
 	handles = utils.DictObject({
 		'ExtraServ': {
 			'nick':'ExtraServ',
