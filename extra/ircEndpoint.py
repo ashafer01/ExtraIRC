@@ -1,5 +1,6 @@
 import log
 import irc
+from irc import server
 
 class ircEndpoint:
 	def __init__(self, writefunc, endpointModule):
@@ -20,7 +21,7 @@ class ircEndpoint:
 				line.handle.user = nick_obj.user
 				line.handle.host = nick_obj.host
 
-		getattr(self.handler, line.cmd)(line)
+		self.handler.handleLine(line)
 
 	def send(self, line):
 		log.info(log.color.green("=> {0}".format(line)))

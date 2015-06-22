@@ -33,12 +33,16 @@ def start_twisted(endpointModule):
 	reactor.run()
 
 def start_stdio(endpointModule):
-	log.debug('Using stdio')
 	import sys
+	def stderr_writeline(text):
+		sys.stderr.write(text + "\n")
+	log.write_line = stderr_writeline
+	log.debug('Using stdio')
 	def write(line):
 		print line
 	_ircEndpoint = ircEndpoint(write, endpointModule)
 	_ircEndpoint.write = write
+	_ircEndpoint.handler.ident()
 	log.notice('Starting stdin loop')
 	while True:
 		_ircEndpoint.handleLine(sys.stdin.readline())

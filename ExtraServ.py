@@ -8,8 +8,18 @@ if __name__ == '__main__':
 	import os
 	parser = argparse.ArgumentParser(description='Start ExtraServ IRC Services for Hybrid')
 	group = parser.add_mutually_exclusive_group()
-	group.add_argument('--twisted', dest='run', action='store_const', const=extra.start_twisted)
-	group.add_argument('--stdio', dest='run', action='store_const', const=extra.start_stdio)
+	group.add_argument('--twisted',
+		dest='run',
+		action='store_const',
+		const=extra.start_twisted,
+		help='Use twisted to connect to the uplink server (default)'
+	)
+	group.add_argument('--stdio',
+		dest='run',
+		action='store_const',
+		const=extra.start_stdio,
+		help='Accept IRC commands on stdin and reply on stdout'
+	)
 	opts = parser.parse_args()
 
 	if opts.run is None:

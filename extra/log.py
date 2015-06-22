@@ -36,10 +36,16 @@ def level_to_string(level):
 def timestamp():
 	return datetime.datetime.utcnow().strftime('%a %Y-%m-%d %H:%M:%S.%f')
 
+def format_line(level, line):
+	return '[{0}] {1}: {2}'.format(timestamp(), level_to_string(level), line)
+
+def write_line(text):
+	print text
+
 def do_message(level, message):
 	if level <= LEVEL:
 		for line in message.split('\n'):
-			print '[{0}] {1}: {2}'.format(timestamp(), level_to_string(level), line)
+			write_line(format_line(level, line))
 
 def fatal(message):
 	do_message(FATAL, color.light_red(message))
