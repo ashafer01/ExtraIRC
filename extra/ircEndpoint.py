@@ -20,7 +20,7 @@ class ircEndpoint:
 				line.handle.host = nick_obj.host
 		try:
 			getattr(self.handler, line.cmd)(line)
-		except NameError:
+		except AttributeError:
 			self.handler._unhandled(line)
 
 	def send(self, line):

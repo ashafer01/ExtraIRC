@@ -15,6 +15,9 @@ def start_twisted(HANDLER):
 		def lineReceived(self, line):
 			self.ircEndpoint.handleLine(line)
 
+		def connectionMade(self):
+			self.ircEndpoint.handler.ident()
+
 	class UplinkFactory(ClientFactory):
 		protocol = Uplink
 
@@ -25,7 +28,7 @@ def start_twisted(HANDLER):
 			return Uplink(**self.init_kwargs)
 
 	from twisted.internet import reactor
-	reactor.connectTCP('localhost', 9999, UplinkFactory(handler=HANDLER, state=state))
+	reactor.connectTCP('localhost', 9998, UplinkFactory(handler=HANDLER, state=state))
 	reactor.run()
 
 def start_stdio(HANDLER):

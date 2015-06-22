@@ -32,7 +32,7 @@ class Line:
 				else:
 					ret.args.append(token.strip())
 			else:
-				text_words.append(word)
+				text_words.append(token)
 		ret.text = ' '.join(text_words)
 		return ret
 

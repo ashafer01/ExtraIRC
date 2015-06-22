@@ -10,11 +10,10 @@ class handler:
 		log.debug1('Constructed new extra.service.handler')
 		self.endpoint = endpoint
 		self.out = server.Output(self.endpoint.send)
-		self._ident()
 
-	def _ident(self):
+	def ident(self):
 		log.debug("Starting service ident")
-		self.out.send("PASS {0} :{1}".format(Config.password('uplink_send'), time()))
+		self.out.send("PASS {0} :TS".format(Config.password('uplink_send')))
 		self.out.send("CAPAB :ENCAP EX IE HOPS SVS CHW QS EOB KLN GLN KNOCK UNKLN DLN UNDLN")
 		self.out.send("SID {0} 1 {1} :{2}".format(Config.hostname, Config.token, Config.info))
 		self.out.send("SERVER {0} 1 :{1}".format(Config.hostname, Config.info))
@@ -22,7 +21,7 @@ class handler:
 		log.debug("Completed service ident")
 
 	def _unhandled(self, line):
-		log.warning("UNHANDLED: {0}".format(line))
+		log.debug2("UNHANDLED: {0}".format(line))
 
 	def ERROR(self, line):
 		log.fatal("Received ERROR line: {0}".format(line.text))
@@ -39,12 +38,8 @@ class handler:
 
 	def SERVER(self, line):
 		log.debug("Got SERVER")
-		self.endpoint.state.servers.add({
-			'name':line.args[0],
-			'token':line.args[1],
-			'desc':line.text
-		})
-		if line.prefix = None:
+		self.endpoint.state.servers.add(name=line.args[0], token=line.args[1], desc=line.text)
+		if line.prefix is None:
 			self.endpoint.uplinkServer = line.args[0]
 		log.debug2('Finished SERVER handling')
 
@@ -69,6 +64,7 @@ class handler:
 	def SJOIN(self, line):
 		log.debug('Got SJOIN')
 
+		chan = line.args[1]
 		cmodes = line.args[2][1:]
 		newchan = {'channel':chan, 'modes':cmodes}
 
@@ -108,6 +104,7 @@ class handler:
 
 	def MODE(self, line):
 		log.debug('Got MODE')
+		target = line.args[1].lower()
 		modeargs = collections.deque(line.args[2:])
 		if self.endpoint.state.isChannel(target):
 			log.debug('Got chanmode change')
