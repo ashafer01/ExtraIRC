@@ -1,6 +1,6 @@
 import sqlite3
-import utils
-import log
+from extra import utils
+from extra import log
 
 class state:
 	def __init__(self):

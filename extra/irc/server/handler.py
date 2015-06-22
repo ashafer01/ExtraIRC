@@ -1,15 +1,16 @@
 import sys
 import collections
+
 from extra import log
-from extra.irc import server
 from extra.utils import time
 from extra.config import Config
+from Output import Output
 
 class handler:
 	def __init__(self, endpoint):
-		log.debug('Constructed new extra.irc.service.handler')
+		log.debug('Constructed new extra.irc.server.handler')
 		self.endpoint = endpoint
-		self.out = server.Output(self.endpoint.send)
+		self.out = Output(self.endpoint.send)
 
 	def ident(self):
 		log.debug("Starting service ident")

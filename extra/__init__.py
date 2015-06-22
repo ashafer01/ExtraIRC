@@ -1,9 +1,8 @@
 import log
 import TerminalColor
-from state import state
 from ircEndpoint import ircEndpoint
 
-def start_twisted(HANDLER):
+def start_twisted(endpointModule):
 	log.debug('Using twisted')
 	from twisted.internet.protocol import ClientFactory
 	from twisted.internet.endpoints import TCP4ClientEndpoint
@@ -11,7 +10,7 @@ def start_twisted(HANDLER):
 
 	class Uplink(LineReceiver):
 		def __init__(self):
-			self.ircEndpoint = ircEndpoint(self.sendLine, HANDLER, state())
+			self.ircEndpoint = ircEndpoint(self.sendLine, endpointModule)
 
 		def lineReceived(self, line):
 			self.ircEndpoint.handleLine(line)
@@ -33,12 +32,12 @@ def start_twisted(HANDLER):
 	reactor.connectTCP('localhost', 9998, UplinkFactory())
 	reactor.run()
 
-def start_stdio(HANDLER):
+def start_stdio(endpointModule):
 	log.debug('Using stdio')
 	import sys
 	def write(line):
 		print line
-	_ircEndpoint = ircEndpoint(write, HANDLER, state())
+	_ircEndpoint = ircEndpoint(write, endpointModule)
 	_ircEndpoint.write = write
 	log.notice('Starting stdin loop')
 	while True:

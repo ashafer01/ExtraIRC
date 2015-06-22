@@ -2,10 +2,11 @@ import log
 import irc
 
 class ircEndpoint:
-	def __init__(self, writefunc, handlerClass, state):
+	def __init__(self, writefunc, endpointModule):
 		self.write = writefunc
-		self.handler = handlerClass(self)
-		self.state = state
+		self.endpointMoudle = endpointModule
+		self.handler = endpointModule.handler(self)
+		self.state = endpointModule.state()
 
 	def handleLine(self, raw_line):
 		raw_line = raw_line.strip()
