@@ -6,6 +6,7 @@ class state:
 	def __init__(self):
 		self.dbc = sqlite3.connect(':memory:')
 		self.dbc.row_factory = utils.DictObject_row_factory
+		self.dbc.text_factory = str
 
 		self.channels = channels(self.dbc)
 		self.nicks = nicks(self.dbc)
@@ -52,7 +53,7 @@ class servers:
 		n = c.rowcount
 		self.dbc.commit()
 		if n > 0:
-			log.debug('Removed server {0}'.format(server))
+			log.info('Removed server {0}'.format(server))
 		else:
 			log.notice('server {0} does not exist on remove'.format(server))
 
@@ -75,12 +76,12 @@ class nicks:
 	def add(self, **kwargs):
 		kwargs['nick'] = kwargs['nick'].lower()
 		kwargs['user'] = kwargs['user'].lower()
-		if self.get(kwargs['nick']) is None and self.getByuser(kwargs['user']):
+		if self.get(kwargs['nick']) is None:
 			self.dbc.execute('INSERT INTO nicks (nick,user,host,modes,server,realname) VALUES (:nick,:user,:host,:modes,:server,:realname)', kwargs)
 			self.dbc.commit()
 			log.info('Added nick {nick}'.format(**kwargs))
 		else:
-			raise Exception('nick or user already exists')
+			raise Exception('nick already exists')
 
 	def change(self, oldnick, newnick):
 		oldnick = oldnick.lower()
@@ -133,7 +134,7 @@ class channels:
 		c = self.dbc.execute('SELECT nick FROM channel_members WHERE channel=?', (channel,))
 		ret = []
 		for row in c:
-			ret.append(c.nick)
+			ret.append(row.nick)
 		return ret
 
 	def getModelist(self, channel, modechar):
@@ -141,7 +142,7 @@ class channels:
 		c = self.dbc.execute('SELECT value FROM channel_modelists WHERE channel=? AND mode=?', (channel, modechar))
 		ret = []
 		for row in c:
-			ret.append(c.value)
+			ret.append(row.value)
 		return ret
 
 	def addToModelist(self, channel, mode, value):
@@ -150,22 +151,22 @@ class channels:
 		if value not in current_list:
 			self.dbc.execute('INSERT INTO channel_modelists (channel, mode, value) VALUES (?, ?, ?)', (channel, mode, value))
 			self.dbc.commit()
-			log.debug('Added {0} to modelist {1} for {2}'.format(value, mode, channel))
+			log.debug1('Added {0} to modelist {1} for {2}'.format(value, mode, channel))
 		else:
-			log.debug1('{0} already on modelist {1} for {2}'.format(value, mode, channel))
+			log.debug('{0} already on modelist {1} for {2}'.format(value, mode, channel))
 
 	def removeFromModelist(self, channel, mode, value):
 		channel = channel.lower()
 		c = self.dbc.execute("DELETE FROM channel_modelists WHERE channel=? AND mode=? AND value=?", (channel, mode, member))
 		n = c.rowcount
 		if n > 0:
-			log.debug('Removed {0} from modelist {1} for {2}'.format(value, mode, channel))
+			log.debug1('Removed {0} from modelist {1} for {2}'.format(value, mode, channel))
 		else:
-			log.debug1('No changes made on removeFromModelist')
+			log.debug('No changes made on removeFromModelist')
 
 	def add(self, **kwargs):
 		kwargs['channel'] = kwargs['channel'].lower()
-		if self.getChannel(kwargs['channel']) is None:
+		if self.get(kwargs['channel']) is None:
 			self.dbc.execute('INSERT INTO channels (channel, modes, mode_k, mode_l) VALUES (:channel, :modes, :mode_k, :mode_l)', kwargs)
 			self.dbc.commit()
 			log.debug("Added new channel {0}".format(kwargs['channel']))
@@ -176,12 +177,12 @@ class channels:
 	def addMember(self, channel, nick):
 		channel = channel.lower()
 		nick = nick.lower()
-		if member not in self.getChannelMembers(channel):
+		if nick not in self.getMembers(channel):
 			self.dbc.execute('INSERT INTO channel_members (channel, nick) VALUES (?, ?)', (channel, nick))
+			self.dbc.commit()
+			log.debug("Added {0} to {1}".format(nick, channel))
 		else:
-			log.debug1("{0} is already a member of channel {1}".format(nick, channel))
-		self.dbc.commit()
-		log.debug("Added {0} to {1}".format(nick, channel))
+			log.debug("{0} is already a member of channel {1}".format(nick, channel))
 
 	def removeMember(self, channel, member):
 		channel = channel.lower()
@@ -193,9 +194,9 @@ class channels:
 		n += c.rowcount
 		self.dbc.commit()
 		if n > 0:
-			log.debug("Removed {0} from {1}".format(member, channel))
+			log.debug1("Removed {0} from {1}".format(member, channel))
 		else:
-			log.debug1("Member {0} not in {1} on removeMember".format(member, channel))
+			log.debug("Member {0} not in {1} on removeMember".format(member, channel))
 
 	def changeNick(self, oldnick, newnick):
 		oldnick = oldnick.lower()
@@ -207,7 +208,7 @@ class channels:
 		n += c.rowcount
 		self.dbc.commit()
 		if n > 0:
-			log.debug("Changed nick {0} => {1} in channel state".format(oldnick, newnick))
+			log.info("Changed nick {0} => {1} in channel state".format(oldnick, newnick))
 		else:
 			log.notice("No changes made on changeNick for {0}".format(oldnick))
 
@@ -225,7 +226,7 @@ class channels:
 		n = c.rowcount
 		self.dbc.commit()
 		if n > 0:
-			log.debug("Updated modes for channel {0} -> {1}".format(channel, params))
+			log.info("Updated modes for channel {0} -> {1}".format(channel, params))
 		else:
 			log.notice("No changes made on setModes for {0}".format(channel))
 
@@ -238,7 +239,7 @@ class channels:
 		n += c.rowcount
 		self.dbc.commit()
 		if n > 0:
-			log.debug("Removed nick {0} from channel state".format(nick))
+			log.info("Removed nick {0} from channel state".format(nick))
 		else:
-			log.debug1("No changes made on removeNick for {0}".format(nick))
+			log.debug("No changes made on removeNick for {0}".format(nick))
 

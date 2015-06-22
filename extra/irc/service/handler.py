@@ -46,7 +46,6 @@ class handler:
 	def NICK(self, line):
 		log.debug('Got NICK line')
 		if line.prefix is None or self.endpoint.state.isServer(line.prefix):
-			log.info('Got new nick {0}'.format(line.args[0]))
 			self.endpoint.state.nicks.add(
 				nick=line.args[0],
 				user=line.args[4],
@@ -66,7 +65,7 @@ class handler:
 
 		chan = line.args[1]
 		cmodes = line.args[2][1:]
-		newchan = {'channel':chan, 'modes':cmodes}
+		newchan = {'channel':chan, 'modes':cmodes, 'mode_k':'', 'mode_l':''}
 
 		# handle mode args
 		mode_args = collections.deque(line.args[3:] + ['',''])

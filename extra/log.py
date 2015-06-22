@@ -11,7 +11,7 @@ DEBUG1 = 6
 DEBUG2 = 7
 DEBUG3 = 8
 
-LEVEL = DEBUG
+LEVEL = DEBUG3
 
 def level_to_string(level):
 	if level == FATAL:
@@ -34,7 +34,7 @@ def level_to_string(level):
 		return 'DEBUG3'
 
 def timestamp():
-	return datetime.datetime.utcnow().strftime('%a %Y-%m-%d %H:%M:%s.%f')
+	return datetime.datetime.utcnow().strftime('%a %Y-%m-%d %H:%M:%S.%f')
 
 def do_message(level, message):
 	if level <= LEVEL:
