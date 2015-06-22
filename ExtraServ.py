@@ -17,4 +17,6 @@ if __name__ == '__main__':
 
 	extra.config.loadConfig()
 	extra.config.Config.base_dir = os.path.dirname(os.path.realpath(__file__))
+
+	extra.log.info('Starting ExtraServ')
 	opts.run(extra.irc.service.handler)

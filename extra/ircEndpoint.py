@@ -18,11 +18,8 @@ class ircEndpoint:
 				line.handle.nick = nick_obj.nick
 				line.handle.user = nick_obj.user
 				line.handle.host = nick_obj.host
-		try:
-			getattr(self.handler, line.cmd)(line)
-		except AttributeError as e:
-			self.handler._unhandled(line)
-			log.debug3(str(e))
+
+		getattr(self.handler, line.cmd)(line)
 
 	def send(self, line):
 		log.info(log.color.green("=> {0}".format(line)))

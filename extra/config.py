@@ -1,3 +1,5 @@
+import utils
+
 def loadConfig():
 	pass
 
@@ -5,6 +7,20 @@ class Config:
 	hostname = 'extrastout.defiant.worf.co'
 	token = '0ES'
 	info = 'ExtraServ ~new~ IRC Services for Hybrid'
+
+	handles = utils.DictObject({
+		'ExtraServ': {
+			'nick':'ExtraServ',
+			'mode':'+io',
+			'user':'ExtraServ',
+			'host':'extra.worf.co',
+			'name':'ExtraServ ~new~ IRC Services for Hybrid'
+		}
+	})
+
+	channels = [
+		'#alex'
+	]
 
 	modeSymbolMap = {
 		'@':'o',

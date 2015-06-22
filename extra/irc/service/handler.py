@@ -7,7 +7,7 @@ from extra.config import Config
 
 class handler:
 	def __init__(self, endpoint):
-		log.debug1('Constructed new extra.service.handler')
+		log.debug('Constructed new extra.irc.service.handler')
 		self.endpoint = endpoint
 		self.out = server.Output(self.endpoint.send)
 
@@ -20,8 +20,10 @@ class handler:
 		self.out.send("SVINFO 6 5 0 :{0}".format(time()))
 		log.debug("Completed service ident")
 
-	def _unhandled(self, line):
-		log.debug2("UNHANDLED: {0}".format(line))
+	def __getattr__(self, name):
+		def unhandled(line):
+			log.debug2("{0} UNHANDLED > {1}".format(name, line))
+		return unhandled
 
 	def ERROR(self, line):
 		log.fatal("Received ERROR line: {0}".format(line.text))
@@ -31,20 +33,38 @@ class handler:
 		self.out.send("PONG :{0}".format(line.text))
 
 	def AWAY(self, line):
-		log.debug('Got AWAY')
+		log.debug2('Got AWAY')
 
 	def EOB(self, line):
-		log.debug("Got EOB")
+		log.debug2("Got EOB")
+
+		log.debug('Setting up handles')
+		for nick in Config.handles:
+			self.out.NICK(**Config.handles[nick])
+			for channel in Config.channels:
+				log.debug('Joining {0} to {1}'.format(nick, channel))
+				self.out.SJOIN(nick, channel)
+
+	def PASS(self, line):
+		log.debug2("Got PASS")
+		if line.prefix is None:
+			log.info("Checking PASS from uplink server")
+			if line.args[0] != Config.password('uplink_accept'):
+				raise Exception('Uplink server supplied invalid password')
+			else:
+				log.info('Uplink server PASS OK')
+		else:
+			log.debug1('Got PASS from {0}'.format(line.prefix))
 
 	def SERVER(self, line):
-		log.debug("Got SERVER")
+		log.debug2("Got SERVER")
 		self.endpoint.state.servers.add(name=line.args[0], token=line.args[1], desc=line.text)
 		if line.prefix is None:
 			self.endpoint.uplinkServer = line.args[0]
 		log.debug2('Finished SERVER handling')
 
 	def NICK(self, line):
-		log.debug('Got NICK line')
+		log.debug2('Got NICK line')
 		if line.prefix is None or self.endpoint.state.isServer(line.prefix):
 			self.endpoint.state.nicks.add(
 				nick=line.args[0],
@@ -61,7 +81,7 @@ class handler:
 		log.debug2('Finished NICK handling')
 
 	def SJOIN(self, line):
-		log.debug('Got SJOIN')
+		log.debug2('Got SJOIN')
 
 		chan = line.args[1]
 		cmodes = line.args[2][1:]
@@ -97,13 +117,13 @@ class handler:
 		log.warning('Got standard JOIN message > {0}'.format(line))
 
 	def PART(self, line):
-		log.debug('Got PART')
+		log.debug2('Got PART')
 		self.endpoint.state.channels.removeMember(line.args[0], line.handle.nick)
 		log.debug2('Finished PART handling')
 
 	def MODE(self, line):
-		log.debug('Got MODE')
-		target = line.args[1].lower()
+		log.debug2('Got MODE')
+		target = line.args[0].lower()
 		modeargs = collections.deque(line.args[2:])
 		if self.endpoint.state.isChannel(target):
 			log.debug('Got chanmode change')

@@ -151,7 +151,7 @@ class channels:
 		if value not in current_list:
 			self.dbc.execute('INSERT INTO channel_modelists (channel, mode, value) VALUES (?, ?, ?)', (channel, mode, value))
 			self.dbc.commit()
-			log.debug1('Added {0} to modelist {1} for {2}'.format(value, mode, channel))
+			log.debug('Added {0} to modelist {1} for {2}'.format(value, mode, channel))
 		else:
 			log.debug('{0} already on modelist {1} for {2}'.format(value, mode, channel))
 
@@ -160,7 +160,7 @@ class channels:
 		c = self.dbc.execute("DELETE FROM channel_modelists WHERE channel=? AND mode=? AND value=?", (channel, mode, member))
 		n = c.rowcount
 		if n > 0:
-			log.debug1('Removed {0} from modelist {1} for {2}'.format(value, mode, channel))
+			log.debug('Removed {0} from modelist {1} for {2}'.format(value, mode, channel))
 		else:
 			log.debug('No changes made on removeFromModelist')
 
@@ -214,28 +214,28 @@ class channels:
 
 	def setModes(self, **params):
 		params['channel'] = params['channel'].lower()
-		query = 'UPDATE channels SET modes={modes}'
+		query = 'UPDATE channels SET modes=:modes'
 		if 'mode_k' in params and params['mode_k'] is not None:
-			query += ', mode_k={mode_k}'
+			query += ', mode_k=:mode_k'
 		if 'mode_l' in params and params['mode_l'] is not None:
-			query += ', mode_l={mode_l}'
-		query += ' WHERE channel={channel}'
+			query += ', mode_l=:mode_l'
+		query += ' WHERE channel=:channel'
 		if isinstance(params['modes'], set):
 			params['modes'] = ''.join(params['modes'])
 		c = self.dbc.execute(query, params)
 		n = c.rowcount
 		self.dbc.commit()
 		if n > 0:
-			log.info("Updated modes for channel {0} -> {1}".format(channel, params))
+			log.info("Updated modes for channel {0} -> {1}".format(params['channel'], params))
 		else:
-			log.notice("No changes made on setModes for {0}".format(channel))
+			log.notice("No changes made on setModes for {0}".format(params['channel']))
 
 	def removeNick(self, nick):
 		nick = nick.lower()
 		n = 0
-		c = self.dbc.execute("DELETE FROM channel_members WHERE nick=?", (channel, nick))
+		c = self.dbc.execute("DELETE FROM channel_members WHERE nick=?", (nick,))
 		n += c.rowcount
-		c = self.dbc.execute("DELETE FROM channel_modelists WHERE mode IN('o','h','v') AND value=?", (channel, nick))
+		c = self.dbc.execute("DELETE FROM channel_modelists WHERE mode IN('o','h','v') AND value=?", (nick,))
 		n += c.rowcount
 		self.dbc.commit()
 		if n > 0:

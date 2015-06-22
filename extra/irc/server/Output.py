@@ -23,3 +23,9 @@ class Output:
 	def SVSNICK(self, oldnick, newnick):
 		self.asServer("SVSNICK {0} {1} {2}".format(oldnick, newnick, time()))
 
+	def NICK(self, **params):
+		# NICK NickServ 2 1433794654 +io NickServ dot.cs.wmich.edu dot.cs.wmich.edu 0 :Nickname Services
+		params['ts'] = time()
+		params['myHostname'] = Config.hostname
+		self.send("NICK {nick} 1 {ts} {mode} {user} {host} {myHostname} 0 :{name}".format(**params))
+
