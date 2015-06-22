@@ -39,6 +39,14 @@ class handler:
 
 	def SERVER(self, line):
 		log.debug("Got SERVER")
+		self.endpoint.state.servers.add({
+			'name':line.args[0],
+			'token':line.args[1],
+			'desc':line.text
+		})
+		if line.prefix = None:
+			self.endpoint.uplinkServer = line.args[0]
+		log.debug2('Finished SERVER handling')
 
 	def NICK(self, line):
 		log.debug('Got NICK line')
@@ -61,19 +69,15 @@ class handler:
 	def SJOIN(self, line):
 		log.debug('Got SJOIN')
 
-		chan = line.args[1].lower()
-
 		cmodes = line.args[2][1:]
 		newchan = {'channel':chan, 'modes':cmodes}
 
 		# handle mode args
 		mode_args = collections.deque(line.args[3:] + ['',''])
 		for modechar in cmodes:
-			if modechar == 'k':
-				newchan['mode_k'] = mode_args.popleft()
-			elif modechar == 'l':
-				newchan['mode_l'] = mode_args.popleft()
-			elif modechar in 'ohv':
+			if modechar in 'kl':
+				newchan['mode_' + modechar] = mode_args.popleft()
+			elif modechar in 'ohvbeI':
 				raise Exception('List mode in SJOIN')
 
 		self.endpoint.state.channels.add(**newchan)
@@ -81,17 +85,15 @@ class handler:
 		# process names list
 		names = line.text.split()
 		for name in names:
-			newmember = {'channel':chan,'chanmodes':''}
-			name = name.lower()
 			chanmodes = ''
 			while name[0] in Config.modeSymbolMap:
 				chanmodes += Config.modeSymbolMap[name[0]]
 				name = name[1:]
-			newmember['nick'] = name
-			newmember['chanmodes'] = chanmodes
 
 			if self.endpoint.state.isNick(name):
-				self.endpoint.state.channels.addMember(**newmember)
+				self.endpoint.state.channels.addMember(chan, name)
+				for c in chanmodes:
+					self.endpoint.state.channels.addToModelist(chan, c, name)
 			else:
 				log.warning('Got unknown nick in SJOIN')
 		log.debug2('Finished SJOIN handling')
@@ -101,12 +103,11 @@ class handler:
 
 	def PART(self, line):
 		log.debug('Got PART')
-		self.endpoint.state.channels.removeMember(line.args[0].lower(), line.handle.nick)
+		self.endpoint.state.channels.removeMember(line.args[0], line.handle.nick)
 		log.debug2('Finished PART handling')
 
 	def MODE(self, line):
 		log.debug('Got MODE')
-		target = line.args[0].lower()
 		modeargs = collections.deque(line.args[2:])
 		if self.endpoint.state.isChannel(target):
 			log.debug('Got chanmode change')
@@ -121,19 +122,23 @@ class handler:
 					continue
 				if op is None:
 					raise Exception('Malformed MODE')
-				change = '{0}{1}'.format(op, c)
-				log.debug1('Found chanmode {0} {1}'.format(chan, change))
+				log.debug1('Found chanmode {0} {1}'.format(chan, op + c))
 				if c in 'ohvbeI': # list modes
-					log.debug2('Taking argument for {0}'.format(change))
+					log.debug2('Taking argument for {0}'.format(op + c))
 					value = modeargs.popleft()
 					if op == '+':
 						self.endpoint.state.channels.addToModelist(chan, c, value)
 					else:
 						self.endpoint.state.channels.removeFromModelist(chan, c, value)
 				elif c in 'kl': # single-argument modes
-					log.debug2('Taking argument for {0}'.format(change))
-					value = modeargs.popleft()
-					changeParams['mode_{0}'.format(c)] = value
+					if op == '+':
+						log.debug2('Taking argument for {0}'.format(op + c))
+						value = modeargs.popleft()
+						changeParams['mode_' + c] = value
+						changeParams['modes'].add(c)
+					else:
+						changeParams['mode_' + c] = ''
+						changeParams['modes'].discard(c)
 				else: # mode flag
 					if op == '+':
 						changeParams['modes'].add(c)
@@ -165,12 +170,22 @@ class handler:
 
 	def KICK(self, line):
 		log.debug('Got KICK')
+		self.endpoint.state.channels.removeMember(line.args[0], line.args[1])
+		log.debug2('Finished KICK handling')
 
 	def QUIT(self, line):
 		log.debug('Got QUIT')
+		self.endpoint.state.removeNick(line.handle.nick)
+		log.debug2('Finished QUIT handling')
 
 	def SQUIT(self, line):
 		log.debug('Got SQUIT')
+		if line.prefix == Config.hostname:
+			log.error('Server {0} is killing me: {1}'.format(line.args[0], line.text))
+		else:
+			log.notice('Server {0} has quit {1}'.format(line.prefix, line.text))
+			self.endpoint.state.servers.remove(line.prefix)
+		log.debug2('Finished SQUIT handling')
 
 	def PRIVMSG(self, line):
 		log.debug('Got PRIVMSG')
