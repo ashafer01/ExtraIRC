@@ -1,8 +1,12 @@
 import inspect
 from extra import utils
 
-class userCommand(object):
-	pass
+class servCommand(object):
+	summary = '?'
+
+	@classmethod
+	def help(cls, _):
+		return ['No help for '+cls.__name__]
 
 # commands return a list of lines which will be NOTICEd back to the user
 class ServiceCommands:
@@ -11,14 +15,11 @@ class ServiceCommands:
 		ret = {}
 		for prop in dir(cls):
 			propobj = getattr(cls, prop)
-			if inspect.isclass(propobj) and issubclass(propobj, userCommand):
+			if inspect.isclass(propobj) and issubclass(propobj, servCommand):
 				ret[prop] = getattr(cls, prop).summary
 		return ret
 
-	class ASSOCIATE(userCommand):
-		def __call__(self, line):
-			pass
-
+	class ASSOCIATE(servCommand):
 		summary = 'Associate your current nickname with your registered username'
 		usage = 'ASSOCIATE <password>'
 
@@ -29,12 +30,15 @@ class ServiceCommands:
 				cls.summary
 			]
 
-	class DEIDENT(userCommand):
+		def __call__(self, line):
+			pass
+
+	class DEIDENT(servCommand):
 		summary = 'Remove identification for this connection'
 		def __call__(self, line):
 			pass
 
-	class HELP(userCommand):
+	class HELP(servCommand):
 		summary = 'Obtain information about how to use service commands'
 		usage = 'HELP <command> [...]'
 
@@ -55,12 +59,8 @@ class ServiceCommands:
 
 			if len(arg_str) > 0:
 				subcmd, arg_str = arg_str.split(' ', 1) + ['']
-				if hasattr(self, subcmd):
-					cmdclass = getattr(self, subcmd)
-					if hasattr(cmdclass, 'help'):
-						return cmdclass.help(arg_str)
-					else:
-						return ['No help for ' + subcmd]
+				if hasattr(ServiceCommands, subcmd):
+					return getattr(ServiceCommands, subcmd).help(arg_str)
 				else:
 					ret += ['Unknown command ' + subcmd, ' ']
 			summaryDict = ServiceCommands.getSummaryDict()
@@ -87,62 +87,62 @@ class ServiceCommands:
 					ret.append(fmt.format(cmd, summary))
 			return ret
 
-	class IDENTIFY(userCommand):
+	class IDENTIFY(servCommand):
 		summary = 'Identify yourself with your password'
 		def __call__(self, line):
 			pass
 
-	class OP(userCommand):
+	class OP(servCommand):
 		summary = 'Get channel operator privileges on a channel you own'
 		def __call__(self, line):
 			pass
 
-	class RECOVER(userCommand):
+	class RECOVER(servCommand):
 		summary = 'Recover one of your associated nicknames in use by someone else'
 		def __call__(self, line):
 			pass
 
-	class REGCHAN(userCommand):
+	class REGCHAN(servCommand):
 		summary = 'Register a channel'
 		def __call__(self, line):
 			pass
 
-	class REGISTER(userCommand):
+	class REGISTER(servCommand):
 		summary = 'Register your username'
 		def __call__(self, line):
 			pass
 
-	class REGPHONE(userCommand):
+	class REGPHONE(servCommand):
 		summary = 'Associate a verified phone number with a nickname'
 		def __call__(self, line):
 			pass
 
-	class SET(userCommand):
+	class SET(servCommand):
 		summary = 'Change various settings'
 		def __call__(self, line):
 			pass
 
-	class SETPASS(userCommand):
+	class SETPASS(servCommand):
 		summary = 'Change your password (must be identified)'
 		def __call__(self, line):
 			pass
 
-	class STICKYLISTS(userCommand):
+	class STICKYLISTS(servCommand):
 		summary = 'Make mode lists on a registered channel "sticky"'
 		def __call__(self, line):
 			pass
 
-	class STICKYMODES(userCommand):
+	class STICKYMODES(servCommand):
 		summary = 'Make simple modes on a registered channel "sticky"'
 		def __call__(self, line):
 			pass
 
-	class VALIDATE(userCommand):
+	class VALIDATE(servCommand):
 		summary = 'Determine if the user of a nickname is valid'
 		def __call__(self, line):
 			pass
 
-	class VERIFYPHONE(userCommand):
+	class VERIFYPHONE(servCommand):
 		summary = 'Verify your phone number and associate with your username'
 		def __call__(self, line):
 			pass

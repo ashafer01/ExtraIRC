@@ -1,6 +1,5 @@
 import log
 import irc
-from irc import server
 
 class ircEndpoint:
 	def __init__(self, writefunc, endpointModule):
