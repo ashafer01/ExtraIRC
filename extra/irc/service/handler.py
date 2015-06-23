@@ -18,12 +18,12 @@ class handler(server.handler):
 			log.debug('Got private message to service handle ' + Config.serviceHandle)
 			cmd = line.text.strip().split()[0].upper()
 			try:
-				cmdfunc = getattr(self.cmds, cmd)
+				cmdclass = getattr(self.cmds, cmd)
 				log.debug('Running command ' + cmd)
 			except AttributeError:
 				log.debug1('Not a command')
 				return
-			notices = cmdfunc(line)
+			notices = cmdclass()(line)
 			for notice in notices:
 				self.out.asNick(Config.serviceHandle).NOTICE(line.handle.nick, notice)
 		else:

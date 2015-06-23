@@ -6,6 +6,9 @@ from extra.utils import time
 from extra.config import Config
 from output import Output
 
+class UplinkNotAuthedError(Exception):
+	pass
+
 class handler:
 	def __init__(self, endpoint):
 		log.debug('Constructed new extra.irc.server.handler')
@@ -30,14 +33,14 @@ class handler:
 	def handleLine(self, line):
 		try:
 			getattr(self, line.cmd)(line)
-		except server.UplinkNotAuthedError:
+		except UplinkNotAuthedError:
 			log.error('Uplink server is not authenticated for {0} from {1}'.format(line.cmd, line.prefix))
 
 	def checkUplinkAuthed(self):
 		if self.uplinkAuthed:
 			log.debug3('Server is authenticated')
 		else:
-			raise server.UplinkNotAuthedError()
+			raise UplinkNotAuthedError()
 
 	def ERROR(self, line):
 		log.fatal("Received ERROR line: {0}".format(line.text))
