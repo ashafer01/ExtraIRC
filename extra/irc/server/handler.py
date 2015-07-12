@@ -13,7 +13,7 @@ class handler:
 	def __init__(self, endpoint):
 		log.debug('Constructed new extra.irc.server.handler')
 		self.endpoint = endpoint
-		self.out = Output(self.endpoint.send)
+		self.out = Output(self.endpoint.sendLine)
 		self.uplinkAuthed = False
 
 	def ident(self):

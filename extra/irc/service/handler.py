@@ -7,7 +7,7 @@ class handler(server.handler):
 	def __init__(self, endpoint):
 		log.debug('Constructed new extra.irc.service.handler')
 		self.endpoint = endpoint
-		self.out = server.Output(self.endpoint.send)
+		self.out = server.Output(self.endpoint.sendLine)
 		self.cmds = ServiceCommands()
 
 	def PRIVMSG(self, line):
