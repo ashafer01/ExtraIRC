@@ -29,3 +29,6 @@ class Output:
 		params['myHostname'] = Config.hostname
 		self.send("NICK {nick} 1 {ts} {mode} {user} {host} {myHostname} 0 :{name}".format(**params))
 
+	def ERROR(self, text):
+		self.send("ERROR :{0}".format(text))
+

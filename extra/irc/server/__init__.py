@@ -1,3 +1,5 @@
+import string
+
 from output import Output
 from handler import handler
 from handler import UplinkNotAuthedError
@@ -20,6 +22,7 @@ class _Clients:
 			if conn.idented and state.channels.getMembers(channel):
 
 clients = _Clients()
+modechars = string.ascii_lowercase + string.ascii_uppercase
 
 def start_client_listener():
 	from twisted.internet.protocol import ServerFactory
@@ -32,38 +35,79 @@ def start_client_listener():
 			self.user = None
 			self.host = None
 			self.realname = None
+			self.state = state()
+			self.out = Output(self.sendLine)
 
 			self.connectionIndex = connectionIndex
 			clients.conn_objects.append(self)
+
+		def sendCode(self, code, text):
+			self.out.asServer('{0} {1} {2}'.format(code, self.nick, text)
 
 		def lineReceived(self, raw_line):
 			log_incoming(raw_line)
 			line = irc.Line.parse(raw_line)
 
 			if line.cmd == 'NICK':
+				log.debug1('Got client NICK on connection {0}'.format(self.connectionIndex))
 				self.nick = line.args[0]
+				if self.idented:
+					log.debug('Got client nick change on connection {0}'.format(self.connectionIndex))
+					self.state.changeNick(line.handle.nick, self.nick)
+				else:
+					log.debug2('Not changing nick in state table')
 			elif line.cmd == 'USER':
-				self.user = line.args[0]
-				self.host = line.args[1]
-				self.realname = line.text
+				log.debug1('Got client USER on connection {0}'.format(self.connectionIndex))
+				if not self.idented:
+					self.user = line.args[0]
+					self.host = line.args[1]
+					self.realname = line.text
 			elif line.cmd == 'JOIN':
 				channel = line.args[0]
 				clients.relayChannel(line.handle, channel, line.raw)
-				state.channels.addMember(channel, self.nick)
+				self.state.channels.addMember(channel, line.handle.nick)
+			elif line.cmd == 'PART':
+				channel = line.args[0]
+				clients.relayChannel(line.handle, channel, line.raw)
+				self.state.channels.removeMember(channel, line.handle.nick)
+			elif line.cmd == 'QUIT':
+				self.state.removeNick(line.handle.nick)
+			elif line.cmd == 'MOTD':
+				self.sendCode('375', ':=== Message of the day ===')
+				self.sendCode('372', ':Message of the day is not yet configurable!')
+				self.sendCode('376', ':=== End MOTD ===')
 
 			self.idented = self.nick is not None and self.user is not None and self.realname is not None
 
-			if self.idented and not state.isNick(self.nick):
-				state.nicks.add(nick=self.nick,
+			if self.idented and not self.state.isNick(self.nick):
+				self.state.nicks.add(
+					nick=self.nick,
 					user=self.user,
 					host=self.host,
 					realname=self.realname,
 					server=Config.hostname,
 					modes='i'
 				)
+				self.sendCode('001', ':Welcome to ExtraIRC')
+				self.sendCode('004', ' '.join([
+					Config.hostname,
+					Config.version,
+					modechars, # usermodes [a-zA-Z]
+					modechars, # channel modes
+					'beIovhkl' # channel modes requiring parameters
+				])
+				self.sendCode('005', ' '.join([
+					'DEAF=D KICKLEN=180 PREFIX=(ohv)@%+ STATUSMSG=@%+ EXCEPTS=e',
+					'INVEX=I NICKLEN=18 NETWORK=extra MAXLIST=beI:100 MAXTARGETS=1'
+				])
+				self.sendCode('005', ' '.join([
+					'CHANTYPES=# CHANLIMIT=#:500 CHANNELLEN=18 TOPICLEN=400',
+					'CHANMODES=beI,k,l,{0}'.format(''.join(l for l in modechars if l not in 'beIkl')),
+					'SAFELIST KNOCK AWAYLEN=200'
+				])
 
 		def __str__(self):
-			return "{0}!{1}@{2}".format(self.nick, self.username, Config.hostname)
+			return "{0}!{1}@{2}".format(self.nick, self.user, self.host)
 
 		
 	class IRCServerFactory(ServerFactory):

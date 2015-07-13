@@ -7,6 +7,7 @@ class Config:
 	hostname = 'extrastout.defiant.worf.co'
 	token = '0ES'
 	info = 'ExtraServ ~new~ IRC Services for Hybrid'
+	version = '0.9'
 
 	serviceHandle = 'ExtraServ'
 
