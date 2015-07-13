@@ -11,15 +11,19 @@ from extra.config import Config
 class _Clients:
 	def __init__(self):
 		self.conn_objects = []
+		self.state = state()
 
+	# relay message to all connected clients
 	def relayAll(self, fromHandle, text):
 		for conn in self.conn_objects:
 			if conn.idented:
 				conn.sendLine(":{0} {1}".format(fromHandle, text))
 
+	# relay message to all clients in the given channel
 	def relayChannel(self, fromHandle, channel, text):
 		for conn in self.conn_objects:
-			if conn.idented and state.channels.getMembers(channel):
+			if conn.idented and conn.nick in self.state.channels.getMembers(channel):
+				conn.sendLine(":{0} {1}".format(fromHandle, text))
 
 clients = _Clients()
 modechars = string.ascii_lowercase + string.ascii_uppercase
@@ -40,6 +44,10 @@ def start_client_listener():
 
 			self.connectionIndex = connectionIndex
 			clients.conn_objects.append(self)
+
+		def sendLine(self, line):
+			log_outgoing(line)
+			LineReceiver.sendLine(self, line)
 
 		def sendCode(self, code, text):
 			self.out.asServer('{0} {1} {2}'.format(code, self.nick, text)
@@ -80,6 +88,10 @@ def start_client_listener():
 			self.idented = self.nick is not None and self.user is not None and self.realname is not None
 
 			if self.idented and not self.state.isNick(self.nick):
+				log.info('@ Ident has been completed on connection {0}'.format(self.connectionIndex))
+				log.info('@ nick={0} user={1} host={2} peer={3} connection={4}'.format(
+					self.nick, self.user, self.host, self.transport.getPeer(), self.connectionIndex
+				)
 				self.state.nicks.add(
 					nick=self.nick,
 					user=self.user,
