@@ -1,4 +1,5 @@
 #!/usr/bin/python
+import extra
 import extra.irc.service
 import extra.uplink
 import extra.config
