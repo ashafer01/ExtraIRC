@@ -31,7 +31,7 @@ def start_client_listener():
 			LineReceiver.sendLine(self, line)
 
 		def sendCode(self, code, text):
-			self.out.asServer('{0} {1} {2}'.format(code, self.nick, text)
+			self.out.asServer('{0} {1} {2}'.format(code, self.nick, text))
 
 		def lineReceived(self, raw_line):
 			log_incoming(raw_line)
@@ -45,13 +45,15 @@ def start_client_listener():
 					log.debug('Got client nick change on connection {0}'.format(self.connectionIndex))
 					self.state.changeNick(line.handle.nick, self.nick)
 				else:
-					log.debug2('Not changing nick in state table')
+					log.debug2('Not changing nick in state table as ident is not complete')
 			elif line.cmd == 'USER':
 				log.debug1('Got client USER on connection {0}'.format(self.connectionIndex))
 				if not self.idented:
 					self.user = line.args[0]
 					self.host = line.args[1]
 					self.realname = line.text
+				else:
+					pass
 			elif line.cmd == 'PASS':
 				pass
 			elif line.cmd == 'OPER':
@@ -141,7 +143,7 @@ def start_client_listener():
 
 		
 	class IRCServerFactory(ServerFactory):
-		protocol = IrcClientConnection
+		protocol = IRCClientConnection
 
 		def __init__(self):
 			self.connectionIndex = 0
@@ -150,3 +152,7 @@ def start_client_listener():
 			proto = IRCClientConnection(self.connectionIndex)
 			self.connectionIndex += 1
 			return proto
+
+	from twisted.internet import reactor
+	reactor.listenTCP(6667, IRCServerFactory())
+	reactor.run()

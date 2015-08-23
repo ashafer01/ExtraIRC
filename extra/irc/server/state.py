@@ -243,3 +243,11 @@ class channels:
 		else:
 			log.debug("No changes made on removeNick for {0}".format(nick))
 
+	def getNickChannels(self, nick):
+		nick = nick.lower()
+		c = self.dbc.execute("SELECT channel FROM channel_members WHERE nick=?", (nick,))
+		ret = []
+		for row in c:
+			ret.append(row.channel)
+		return set(ret)
+
