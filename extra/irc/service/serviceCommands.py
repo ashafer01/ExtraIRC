@@ -9,7 +9,7 @@ class servCommand(object):
 		return ['No help for '+cls.__name__]
 
 # commands return a list of lines which will be NOTICEd back to the user
-class ServiceCommands:
+class ServiceCommands(object):
 	@classmethod
 	def getSummaryDict(cls):
 		ret = {}

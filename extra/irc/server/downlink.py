@@ -23,6 +23,8 @@ def start_client_listener():
 			self.state = state()
 			self.out = Output(self.sendLine)
 
+			self.last_pong = 0
+
 			self.connectionIndex = connectionIndex
 			clients.conn_objects.append(self)
 
@@ -90,20 +92,22 @@ def start_client_listener():
 				pass
 			elif line.cmd == 'TOPIC':
 				pass
+			elif line.cmd == 'NAMES':
+				pass
 
-			# informational
+			# informational/misc
 			elif line.cmd == 'MOTD':
 				self.sendCode('375', ':=== Message of the day ===')
 				self.sendCode('372', ':Message of the day is not yet configurable!')
 				self.sendCode('376', ':=== End MOTD ===')
 			elif line.cmd == 'LIST':
 				pass
-			elif line.cmd == 'NAMES':
-				pass
 			elif line.cmd == 'PING':
-				pass
+				self.out.PONG(line.text)
 			elif line.cmd == 'PONG':
 				pass
+			else:
+				self.sendCode('421', line.cmd + ' :Unknown command')
 
 			self.idented = self.nick is not None and self.user is not None and self.realname is not None
 

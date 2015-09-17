@@ -32,3 +32,5 @@ class Output:
 	def ERROR(self, text):
 		self.send("ERROR :{0}".format(text))
 
+	def PONG(self, text):
+		self.asServer("PONG {0} :{1}".format(Config.hostname, text))

@@ -1,3 +1,5 @@
+# handles server-server commands
+
 import sys
 import collections
 
@@ -17,13 +19,13 @@ class handler:
 		self.uplinkAuthed = False
 
 	def ident(self):
-		log.debug("Starting service ident")
+		log.debug("Starting server ident")
 		self.out.send("PASS {0} :TS".format(Config.password('uplink_send')))
 		self.out.send("CAPAB :ENCAP EX IE HOPS SVS CHW QS EOB KLN GLN KNOCK UNKLN DLN UNDLN")
 		self.out.send("SID {0} 1 {1} :{2}".format(Config.hostname, Config.token, Config.info))
 		self.out.send("SERVER {0} 1 :{1}".format(Config.hostname, Config.info))
 		self.out.send("SVINFO 6 5 0 :{0}".format(time()))
-		log.debug("Completed service ident")
+		log.debug("Completed server ident")
 
 	def __getattr__(self, name):
 		def unhandled(line):
@@ -55,13 +57,6 @@ class handler:
 	def EOB(self, line):
 		log.debug2("Got EOB")
 		self.checkUplinkAuthed()
-
-		log.debug('Setting up handles')
-		for nick in Config.handles:
-			self.out.NICK(**Config.handles[nick])
-			for channel in Config.channels:
-				log.debug('Joining {0} to {1}'.format(nick, channel))
-				self.out.SJOIN(nick, channel)
 
 	def PASS(self, line):
 		log.debug2("Got PASS")

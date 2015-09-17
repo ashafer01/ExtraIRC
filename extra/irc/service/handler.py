@@ -1,3 +1,5 @@
+# handles server-service commands
+
 from extra import log
 from extra.irc import server
 from extra.config import Config
@@ -37,3 +39,12 @@ class handler(server.handler):
 
 	def SJOIN(self, line):
 		server.handler.SJOIN(self, line)
+
+	def EOB(self, line):
+		server.handler.EOB(self, line)
+		log.debug('Setting up handles')
+		for nick in Config.handles:
+			self.out.NICK(**Config.handles[nick])
+			for channel in Config.channels:
+				log.debug('Joining {0} to {1}'.format(nick, channel))
+				self.out.SJOIN(nick, channel)
