@@ -11,7 +11,7 @@ from output import Output
 class UplinkNotAuthedError(Exception):
 	pass
 
-class handler:
+class handler(object):
 	def __init__(self, endpoint):
 		log.debug('Constructed new extra.irc.server.handler')
 		self.endpoint = endpoint
@@ -29,7 +29,7 @@ class handler:
 
 	def __getattr__(self, name):
 		def unhandled(line):
-			log.debug2("{0} UNHANDLED > {1}".format(name, line))
+			log.notice("{0} UNHANDLED > {1}".format(name, line))
 		return unhandled
 
 	def handleLine(self, line):

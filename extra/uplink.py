@@ -8,9 +8,9 @@ def start_twisted(endpointModule):
 	from twisted.protocols.basic import LineReceiver
 
 	class Uplink(LineReceiver):
-		def __init__(self):
+		def __init__(self, state):
 			self.handler = endpointModule.handler(self)
-			self.state = endpointModule.state()
+			self.state = state
 
 		def sendLine(self, line):
 			log_outgoing(line)
@@ -35,10 +35,10 @@ def start_twisted(endpointModule):
 		protocol = Uplink
 
 		def __init__(self, **kwargs):
-			self.init_kwargs = kwargs
+			self.state = endpointModule.state()
 
 		def buildProtocol(self, addr):
-			return Uplink(**self.init_kwargs)
+			return Uplink(self.state)
 
 	from twisted.internet import reactor
 	log.notice('Connecting to uplink')
@@ -68,3 +68,18 @@ def start_stdio(endpointModule):
 		raw_line = sys.stdin.readline().strip()
 		log_incoming(raw_line)
 		endpoint.handleLine(raw_line)
+
+def setup_argparse_opts(parser):
+	group = parser.add_mutually_exclusive_group()
+	group.add_argument('--twisted',
+		dest='run',
+		action='store_const',
+		const=start_twisted,
+		help='Use twisted to connect to the uplink server (default)'
+	)
+	group.add_argument('--stdio',
+		dest='run',
+		action='store_const',
+		const=start_stdio,
+		help='Accept IRC commands on stdin and reply on stdout'
+	)

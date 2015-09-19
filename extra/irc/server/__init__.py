@@ -1,9 +1,10 @@
-from state import state
+from serverHandler import handler
+from output import Output
 
-class _Clients:
-	def __init__(self):
+class Clients:
+	def __init__(self, state):
 		self.conn_objects = []
-		self.state = state()
+		self.state = state
 
 	# relay message to all connected clients
 	def relayAll(self, fromHandle, text):
@@ -24,6 +25,4 @@ class _Clients:
 			conn_channels = self.state.channels.getNickChannels(conn.nick)
 			if conn.idented and len(nick_channels.intersection(conn_channels)) > 0:
 				conn.sendLine(":{0} {1}".format(fromHandle, text))
-
-clients = _Clients()
 

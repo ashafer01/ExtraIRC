@@ -3,9 +3,9 @@ import string
 from output import Output
 from state import state
 
-from extra import irc, log_incoming, log_outgoing
+from extra import irc, log, log_incoming, log_outgoing
 from extra.config import Config
-from extra.irc.server import clients
+from extra.irc.server import Clients
 
 modechars = string.ascii_lowercase + string.ascii_uppercase
 
@@ -14,19 +14,21 @@ def start_client_listener():
 	from twisted.protocols.basic import LineReceiver
 
 	class IRCClientConnection(LineReceiver):
-		def __init__(self, connectionIndex):
+		def __init__(self, connectionIndex, state, clients):
 			self.idented = False
 			self.nick = None
 			self.user = None
 			self.host = None
 			self.realname = None
-			self.state = state()
+			self.state = state
+			self.clients = clients
 			self.out = Output(self.sendLine)
 
 			self.last_pong = 0
 
 			self.connectionIndex = connectionIndex
-			clients.conn_objects.append(self)
+			self.clients.conn_objects.append(self)
+			self.clientHandler = clientHandler(self)
 
 		def sendLine(self, line):
 			log_outgoing(line)
@@ -39,75 +41,7 @@ def start_client_listener():
 			log_incoming(raw_line)
 			line = irc.Line.parse(raw_line)
 
-			# ident commands
-			if line.cmd == 'NICK':
-				log.debug1('Got client NICK on connection {0}'.format(self.connectionIndex))
-				self.nick = line.args[0]
-				if self.idented:
-					log.debug('Got client nick change on connection {0}'.format(self.connectionIndex))
-					self.state.changeNick(line.handle.nick, self.nick)
-				else:
-					log.debug2('Not changing nick in state table as ident is not complete')
-			elif line.cmd == 'USER':
-				log.debug1('Got client USER on connection {0}'.format(self.connectionIndex))
-				if not self.idented:
-					self.user = line.args[0]
-					self.host = line.args[1]
-					self.realname = line.text
-				else:
-					pass
-			elif line.cmd == 'PASS':
-				pass
-			elif line.cmd == 'OPER':
-				pass
-
-			# user state
-			elif line.cmd == 'AWAY':
-				pass
-			elif line.cmd == 'QUIT':
-				self.state.removeNick(line.handle.nick)
-
-			# messages
-			elif line.cmd == 'PRIVMSG':
-				pass
-			elif line.cmd == 'NOTICE':
-				pass
-
-			# channel commands
-			elif line.cmd == 'JOIN':
-				channel = line.args[0]
-				clients.relayChannel(line.handle, channel, line.raw)
-				self.state.channels.addMember(channel, line.handle.nick)
-			elif line.cmd == 'PART':
-				channel = line.args[0]
-				clients.relayChannel(line.handle, channel, line.raw)
-				self.state.channels.removeMember(channel, line.handle.nick)
-			elif line.cmd == 'KICK':
-				pass
-			elif line.cmd == 'MODE':
-				pass
-			elif line.cmd == 'INVITE':
-				pass
-			elif line.cmd == 'KNOCK':
-				pass
-			elif line.cmd == 'TOPIC':
-				pass
-			elif line.cmd == 'NAMES':
-				pass
-
-			# informational/misc
-			elif line.cmd == 'MOTD':
-				self.sendCode('375', ':=== Message of the day ===')
-				self.sendCode('372', ':Message of the day is not yet configurable!')
-				self.sendCode('376', ':=== End MOTD ===')
-			elif line.cmd == 'LIST':
-				pass
-			elif line.cmd == 'PING':
-				self.out.PONG(line.text)
-			elif line.cmd == 'PONG':
-				pass
-			else:
-				self.sendCode('421', line.cmd + ' :Unknown command')
+			self.clientHandler.handleLine(line)
 
 			self.idented = self.nick is not None and self.user is not None and self.realname is not None
 
@@ -151,9 +85,11 @@ def start_client_listener():
 
 		def __init__(self):
 			self.connectionIndex = 0
+			self.state = state()
+			self.clients = Clients(self.state)
 
 		def buildProtocol(self):
-			proto = IRCClientConnection(self.connectionIndex)
+			proto = IRCClientConnection(self.connectionIndex, self.state, self.clients)
 			self.connectionIndex += 1
 			return proto
 
