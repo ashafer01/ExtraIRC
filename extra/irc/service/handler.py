@@ -5,7 +5,7 @@ from extra.irc import server
 from extra.config import Config
 from serviceCommands import ServiceCommands
 
-class handler(server.handler):
+class Handler(server.Handler):
 	def __init__(self, endpoint):
 		log.debug('Constructed new extra.irc.service.handler')
 		self.endpoint = endpoint

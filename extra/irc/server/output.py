@@ -14,6 +14,9 @@ class Output:
 	def asServer(self, text):
 		self.send(":{0} {1}".format(Config.hostname, text))
 
+	def sendCode(self, code, text):
+		self.asServer('{0} {1} {2}'.format(code, self.nick, text))
+
 	def SJOIN(self, nick, channel):
 		self.asServer("SJOIN {0} {1} + :{2}".format(time(), channel, nick))
 

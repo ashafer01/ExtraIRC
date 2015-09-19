@@ -4,34 +4,39 @@ def loadConfig():
 	pass
 
 class Config:
-	hostname = 'extrastout.defiant.worf.co'
-	token = '0ES'
-	info = 'ExtraServ ~new~ IRC Services for Hybrid'
-	version = '0.9'
+	def __init__(self)
+		self.hostname = 'extrastout.defiant.worf.co'
+		self.token = '0ES'
+		self.info = 'ExtraServ ~new~ IRC Services for Hybrid'
+		self.version = '0.9'
 
-	serviceHandle = 'ExtraServ'
+		self.serviceHandle = 'ExtraServ'
 
-	handles = utils.DictObject({
-		'ExtraServ': {
-			'nick':'ExtraServ',
-			'mode':'+io',
-			'user':'ExtraServ',
-			'host':'extra.worf.co',
-			'name':'ExtraServ ~new~ IRC Services for Hybrid'
+		self.handles = utils.DictObject({
+			'ExtraServ': {
+				'nick':'ExtraServ',
+				'mode':'+io',
+				'user':'ExtraServ',
+				'host':'extra.worf.co',
+				'name':'ExtraServ ~new~ IRC Services for Hybrid'
+			}
+		})
+
+		self.channels = [
+			'#alex'
+		]
+
+		self.modeSymbolMap = {
+			'@':'o',
+			'%':'h',
+			'+':'v'
 		}
-	})
 
-	channels = [
-		'#alex'
-	]
+		self.uplink = utils.DictObject({
+			'host': 'localhost',
+			'port': 9999
+		})
 
-	modeSymbolMap = {
-		'@':'o',
-		'%':'h',
-		'+':'v'
-	}
-
-	@classmethod
-	def password(cls, pw_name):
-		with open('{1}/passwords/{0}.pw'.format(pw_name, cls.base_dir), 'r') as f:
+	def password(self, pw_name):
+		with open('{1}/passwords/{0}.pw'.format(pw_name, self.base_dir), 'r') as f:
 			return f.readline().strip()

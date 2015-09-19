@@ -1,19 +1,57 @@
 # handles client -> server commands
+import string
+
 from extra import log
 from output import Output
 
-class handler(object):
+modechars = string.ascii_lowercase + string.ascii_uppercase
+
+class Handler(object):
 	def __init__(self, endpoint):
 		self.endpoint = endpoint
 		self.out = Output(self.endpoint.sendLine)
 
-	def handleLine(self, line):
+	def handleLine(self, raw_line):
+		line = irc.Line.parse(raw_line)
 		getattr(self, line.cmd)(line)
+
+		self.idented = self.nick is not None and self.user is not None and self.realname is not None
+
+		if self.endpoint.idented and not self.endpoint.state.isNick(self.nick):
+			log.info('@ Ident has been completed on connection {0}'.format(self.connectionIndex))
+			log.info('@ nick={0} user={1} host={2} peer={3} connection={4}'.format(
+				self.nick, self.user, self.host, self.transport.getPeer(), self.connectionIndex
+			)
+			self.endpoint.state.nicks.add(
+				nick=self.endpoint.nick,
+				user=self.endpoint.user,
+				host=self.endpoint.host,
+				realname=self.endpoint.realname,
+				server=config.hostname,
+				modes='i'
+			)
+			self.out.sendCode('001', ':Welcome to ExtraIRC')
+			self.out.sendCode('004', ' '.join([
+				config.hostname,
+				config.version,
+				modechars, # usermodes [a-zA-Z]
+				modechars, # channel modes
+				'beIovhkl' # channel modes requiring parameters
+			])
+			self.out.sendCode('005', ' '.join([
+				'DEAF=D KICKLEN=180 PREFIX=(ohv)@%+ STATUSMSG=@%+ EXCEPTS=e',
+				'INVEX=I NICKLEN=18 NETWORK=extra MAXLIST=beI:100 MAXTARGETS=1'
+			])
+			self.out.sendCode('005', ' '.join([
+				'CHANTYPES=# CHANLIMIT=#:500 CHANNELLEN=18 TOPICLEN=400',
+				'CHANMODES=beI,k,l,{0}'.format(''.join(l for l in modechars if l not in 'beIkl')),
+				'SAFELIST KNOCK AWAYLEN=200'
+			])
 
 	def __getattr__(self, name):
 		def unhandled(line):
 			log.notice('{0} UNHANDLED > {0}'.format(name, line)
-			self.endpoint.sendCode('421', line.cmd + ' :Unknown command')
+			self.out.sendCode('421', line.cmd + ' :Unknown command')
 		return unhandled
 	
 	# ident commands
@@ -93,9 +131,9 @@ class handler(object):
 	# informational/misc
 
 	def MOTD(self, line):
-		self.endpoint.sendCode('375', ':=== Message of the day ===')
-		self.endpoint.sendCode('372', ':Message of the day is not yet configurable!')
-		self.endpoint.sendCode('376', ':=== End MOTD ===')
+		self.out.sendCode('375', ':=== Message of the day ===')
+		self.out.sendCode('372', ':Message of the day is not yet configurable!')
+		self.out.sendCode('376', ':=== End MOTD ===')
 
 	def LIST(self, line):
 		pass

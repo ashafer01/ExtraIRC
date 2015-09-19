@@ -1,4 +1,4 @@
-import TerminalColor as color
+import terminalColor as color
 import datetime
 
 FATAL = 0

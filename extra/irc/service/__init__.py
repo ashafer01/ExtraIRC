@@ -1,1 +1,2 @@
-from handler import handler
+from handler import Handler
+from extra.irc.server import State

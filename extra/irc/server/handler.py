@@ -3,27 +3,26 @@
 import sys
 import collections
 
-from extra import log
+from extra import log, config, irc
 from extra.utils import time
-from extra.config import Config
 from output import Output
 
 class UplinkNotAuthedError(Exception):
 	pass
 
-class handler(object):
+class Handler(object):
 	def __init__(self, endpoint):
-		log.debug('Constructed new extra.irc.server.handler')
+		log.debug('Constructed new extra.irc.server.Handler')
 		self.endpoint = endpoint
 		self.out = Output(self.endpoint.sendLine)
 		self.uplinkAuthed = False
 
 	def ident(self):
 		log.debug("Starting server ident")
-		self.out.send("PASS {0} :TS".format(Config.password('uplink_send')))
+		self.out.send("PASS {0} :TS".format(config.password('uplink_send')))
 		self.out.send("CAPAB :ENCAP EX IE HOPS SVS CHW QS EOB KLN GLN KNOCK UNKLN DLN UNDLN")
-		self.out.send("SID {0} 1 {1} :{2}".format(Config.hostname, Config.token, Config.info))
-		self.out.send("SERVER {0} 1 :{1}".format(Config.hostname, Config.info))
+		self.out.send("SID {0} 1 {1} :{2}".format(config.hostname, config.token, config.info))
+		self.out.send("SERVER {0} 1 :{1}".format(config.hostname, config.info))
 		self.out.send("SVINFO 6 5 0 :{0}".format(time()))
 		log.debug("Completed server ident")
 
@@ -32,7 +31,14 @@ class handler(object):
 			log.notice("{0} UNHANDLED > {1}".format(name, line))
 		return unhandled
 
-	def handleLine(self, line):
+	def handleLine(self, raw_line):
+		line = irc.Line.parse(raw_line)
+		if line.prefix is not None:
+			nick_obj = self.state.nicks.get(line.prefix)
+			if nick_obj is not None:
+				line.handle.nick = nick_obj.nick
+				line.handle.user = nick_obj.user
+				line.handle.host = nick_obj.host
 		try:
 			getattr(self, line.cmd)(line)
 		except UplinkNotAuthedError:
@@ -62,7 +68,7 @@ class handler(object):
 		log.debug2("Got PASS")
 		if line.prefix is None:
 			log.info("Checking PASS from uplink server")
-			if line.args[0] != Config.password('uplink_accept'):
+			if line.args[0] != config.password('uplink_accept'):
 				raise Exception('Uplink server supplied invalid password')
 			else:
 				log.info('Uplink server PASS OK')
@@ -118,8 +124,8 @@ class handler(object):
 		names = line.text.split()
 		for name in names:
 			chanmodes = ''
-			while name[0] in Config.modeSymbolMap:
-				chanmodes += Config.modeSymbolMap[name[0]]
+			while name[0] in config.modeSymbolMap:
+				chanmodes += config.modeSymbolMap[name[0]]
 				name = name[1:]
 
 			if self.endpoint.state.isNick(name):
@@ -218,7 +224,7 @@ class handler(object):
 
 	def SQUIT(self, line):
 		log.debug('Got SQUIT')
-		if line.prefix == Config.hostname:
+		if line.prefix == config.hostname:
 			log.error('Server {0} is killing me: {1}'.format(line.args[0], line.text))
 		else:
 			log.notice('Server {0} has quit {1}'.format(line.prefix, line.text))

@@ -1,8 +1,7 @@
-from extra import log
 import collections
 import re
 
-class Line:
+class Line(object):
 	def __init__(self):
 		self.prefix = None
 		self.cmd = None
@@ -49,7 +48,7 @@ class Line:
 		else:
 			return self.raw
 
-class HandleInfo:
+class HandleInfo(object):
 	def __init__(self):
 		self.nick = None
 		self.user = None

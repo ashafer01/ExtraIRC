@@ -1,5 +1,7 @@
 import log
-import TerminalColor
+from config import Config
+
+config = Config()
 
 def log_incoming(line):
 	log.info(log.color.cyan("<= " + line))

@@ -2,15 +2,15 @@ import sqlite3
 from extra import utils
 from extra import log
 
-class state(object):
+class State(object):
 	def __init__(self):
 		self.dbc = sqlite3.connect(':memory:')
 		self.dbc.row_factory = utils.DictObject_row_factory
 		self.dbc.text_factory = str
 
-		self.channels = channels(self.dbc)
-		self.nicks = nicks(self.dbc)
-		self.servers = servers(self.dbc)
+		self.channels = Channels(self.dbc)
+		self.nicks = Nicks(self.dbc)
+		self.servers = Servers(self.dbc)
 		self.uplinkServer = None
 
 	def changeNick(self, oldnick, newnick):
@@ -30,7 +30,7 @@ class state(object):
 	def isChannel(self, channel):
 		return self.channels.get(channel) is not None
 
-class servers(object):
+class Servers(object):
 	def __init__(self, dbc):
 		self.dbc = dbc
 		self.dbc.execute('CREATE TABLE IF NOT EXISTS servers (name varchar(100), token char(3), desc varchar(200))')
@@ -57,7 +57,7 @@ class servers(object):
 		else:
 			log.notice('server {0} does not exist on remove'.format(server))
 
-class nicks(object):
+class Nicks(object):
 	def __init__(self, dbc):
 		self.dbc = dbc
 		self.dbc.execute('CREATE TABLE IF NOT EXISTS nicks (nick varchar(24), user varchar(72), host varchar(100), modes varchar(20), server varchar(100), realname varchar(100))')
@@ -116,7 +116,7 @@ class nicks(object):
 		else:
 			log.notice('Nick {0} does not exist on setModes'.format(nick))
 
-class channels(object):
+class Channels(object):
 	def __init__(self, dbc):
 		self.dbc = dbc
 		self.dbc.execute('CREATE TABLE IF NOT EXISTS channels (channel varchar(60), modes varchar(40), mode_k varchar(72), mode_l varchar(6))')
