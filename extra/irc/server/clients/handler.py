@@ -10,6 +10,7 @@ class Handler(object):
 	def __init__(self, endpoint):
 		self.endpoint = endpoint
 		self.out = Output(self.endpoint.sendLine)
+		self.last_pong = 0
 
 	def handleLine(self, raw_line):
 		line = irc.Line.parse(raw_line)

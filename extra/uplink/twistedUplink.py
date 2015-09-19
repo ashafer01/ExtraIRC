@@ -31,6 +31,6 @@ class UplinkFactory(ClientFactory):
 		return Uplink(self.state)
 
 def start(roleModule):
-	extra.log.info('Starting twisted uplink to {0}:{1}'.format(host, port))
+	extra.log.info('Starting twisted uplink to {0}:{1}'.format(extra.config.uplink.host, extra.config.uplink.port))
 	reactor.connectTCP(extra.config.uplink.host, extra.config.uplink.port, UplinkFactory(roleModule))
 	reactor.run()
